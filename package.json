@@ -1,0 +1,25 @@
+{
+  "author": "Matt Sergeant <helpme@gmail.com> (http://baudehlo.wordpress.com/)",
+  "name": "fs-ext",
+  "description": "Extensions to core 'fs' module.",
+  "keywords": ["fs", "filesystem", "flock", "seek"],
+  "version": "0.2.0",
+  "homepage": "https://github.com/baudehlo/node-fs-ext/",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/baudehlo/node-fs-ext.git"
+  },
+  "main": "fs-ext.js",
+  "engines": {
+    "node": ">= v0.4.0"
+  },
+  "dependencies": { },
+  "licenses": [ {
+    "type": "MIT",
+  } ],
+  "bugs": {
+    "mail" : "helpme@gmail.com",
+    "web" : "https://github.com/baudehlo/node-fs-ext/issues"
+  },
+  "scripts": { "install": "node-waf configure build" }
+}
