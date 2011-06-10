@@ -19,9 +19,18 @@
 
 var binding = require('./build/default/fs-ext');
 var fs = require('fs');
+var constants = require('constants');
 
+// populate with fs functions
 for (var key in fs) {
     exports[key] = fs[key];
+}
+
+// put constants into constants module (don't like doing this but...)
+for (var key in binding) {
+    if (/^[A-Z_]+$/.test(key)) {
+        constants[key] = binding[key];
+    }
 }
 
 // Used by flock
@@ -70,3 +79,15 @@ exports.flockSync = function(fd, flags) {
   return binding.flock(fd, oper);
 }
 
+exports.seek = function(fd, position, whence, callback) {
+  callback = arguments[arguments.length - 1];
+  if (typeof(callback) !== 'function') {
+    callback = noop;
+  }
+
+  binding.seek(fd, position, whence, callback);
+}
+
+exports.seekSync = function(fd, position, whence) {
+  return binding.seek(fd, position, whence);
+}

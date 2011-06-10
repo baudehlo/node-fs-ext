@@ -21,6 +21,9 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/file.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -32,16 +35,17 @@ using namespace node;
 #define THROW_BAD_ARGS \
   ThrowException(Exception::TypeError(String::New("Bad argument")))
 
-struct flock_data_t {
+struct store_data_t {
   Persistent<Function> *cb;
   int fd;
   int oper;
+  off_t offset;
 };
 
-static int FlockAfter(eio_req *req) {
+static int After(eio_req *req) {
   HandleScope scope;
 
-  flock_data_t *flock_data = static_cast<flock_data_t *>(req->data);
+  store_data_t *store_data = static_cast<store_data_t *>(req->data);
 
   ev_unref(EV_DEFAULT_UC);
 
@@ -63,20 +67,35 @@ static int FlockAfter(eio_req *req) {
 
   TryCatch try_catch;
 
-  (*(flock_data->cb))->Call(v8::Context::GetCurrent()->Global(), argc, argv);
+  (*(store_data->cb))->Call(v8::Context::GetCurrent()->Global(), argc, argv);
 
   if (try_catch.HasCaught()) {
     FatalException(try_catch);
   }
 
   // Dispose of the persistent handle
-  cb_destroy(flock_data->cb);
+  cb_destroy(store_data->cb);
+
+  return 0;
+}
+
+static int EIO_Seek(eio_req *req) {
+  store_data_t* seek_data = static_cast<store_data_t *>(req->data);
+
+  off_t i = lseek(seek_data->fd, seek_data->offset, seek_data->oper);
+
+  if (i == (off_t)-1) {
+    req->result = -1;
+    req->errorno = errno;
+  } else {
+    req->result = 0;
+  }
 
   return 0;
 }
 
 static int EIO_Flock(eio_req *req) {
-  flock_data_t* flock_data = static_cast<flock_data_t *>(req->data);
+  store_data_t* flock_data = static_cast<store_data_t *>(req->data);
 
 #ifdef _WIN32
   int i = _win32_flock(flock_data->fd, flock_data->oper);
@@ -85,6 +104,8 @@ static int EIO_Flock(eio_req *req) {
 #endif
   
   req->result = i;
+  req->errorno = errno;
+
   return 0;
 }
 
@@ -146,18 +167,18 @@ static Handle<Value> Flock(const Arguments& args) {
     return THROW_BAD_ARGS;
   }
 
-  flock_data_t* flock_data = new flock_data_t();
+  store_data_t* flock_data = new store_data_t();
   
   flock_data->fd = args[0]->Int32Value();
   flock_data->oper = args[1]->Int32Value();
 
   if (args[2]->IsFunction()) {
     flock_data->cb = cb_persist(args[2]);
-    eio_custom(EIO_Flock, EIO_PRI_DEFAULT, FlockAfter, flock_data);
+    eio_custom(EIO_Flock, EIO_PRI_DEFAULT, After, flock_data);
     ev_ref(EV_DEFAULT_UC);
     return Undefined();
   } else {
-#ifdef __MINGW32__
+#ifdef _WIN32
     int i = _win32_flock(flock_data->fd, flock_data->oper);
 #else
     int i = flock(flock_data->fd, flock_data->oper);
@@ -167,10 +188,52 @@ static Handle<Value> Flock(const Arguments& args) {
   }
 }
 
+// TODO: 
+static Handle<Value> Seek(const Arguments& args) {
+  HandleScope scope;
+
+  if (args.Length() < 3 || 
+     !args[0]->IsInt32() || !args[1]->IsInt32() || !args[2]->IsInt32())
+  {
+    return THROW_BAD_ARGS;
+  }
+
+  store_data_t* seek_data = new store_data_t();
+
+  seek_data->fd = args[0]->Int32Value();
+  seek_data->oper = args[2]->Int32Value();
+  seek_data->offset = args[1]->Int32Value();
+
+  if (args[3]->IsFunction()) {
+    seek_data->cb = cb_persist(args[3]);
+    eio_custom(EIO_Seek, EIO_PRI_DEFAULT, After, seek_data);
+    ev_ref(EV_DEFAULT_UC);
+    return Undefined();
+  } else {
+    printf("seek(%d, %d, %d)\n", seek_data->fd, seek_data->offset, seek_data->oper);
+    off_t i = lseek(seek_data->fd, seek_data->offset, seek_data->oper);
+    if (i == (off_t)-1) return ThrowException(ErrnoException(errno));
+    return Undefined();
+  }
+
+}
+
 extern "C" void
 init (Handle<Object> target)
 {
   HandleScope scope;
+
+#ifdef SEEK_SET
+  NODE_DEFINE_CONSTANT(target, SEEK_SET);
+#endif
+
+#ifdef SEEK_CUR
+  NODE_DEFINE_CONSTANT(target, SEEK_CUR);
+#endif
+
+#ifdef SEEK_END
+  NODE_DEFINE_CONSTANT(target, SEEK_END);
+#endif
 
 #ifdef LOCK_SH
   NODE_DEFINE_CONSTANT(target, LOCK_SH);
@@ -188,5 +251,6 @@ init (Handle<Object> target)
   NODE_DEFINE_CONSTANT(target, LOCK_UN);
 #endif
 
+  NODE_SET_METHOD(target, "seek", Seek);
   NODE_SET_METHOD(target, "flock", Flock);
 }

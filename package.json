@@ -3,7 +3,7 @@
   "name": "fs-ext",
   "description": "Extensions to core 'fs' module.",
   "keywords": ["fs", "filesystem", "flock", "seek"],
-  "version": "0.2.0",
+  "version": "0.2.1",
   "homepage": "https://github.com/baudehlo/node-fs-ext/",
   "repository": {
     "type": "git",
@@ -15,7 +15,7 @@
   },
   "dependencies": { },
   "licenses": [ {
-    "type": "MIT",
+    "type": "MIT"
   } ],
   "bugs": {
     "mail" : "helpme@gmail.com",
