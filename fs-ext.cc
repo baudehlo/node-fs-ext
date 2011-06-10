@@ -210,7 +210,6 @@ static Handle<Value> Seek(const Arguments& args) {
     ev_ref(EV_DEFAULT_UC);
     return Undefined();
   } else {
-    printf("seek(%d, %d, %d)\n", seek_data->fd, seek_data->offset, seek_data->oper);
     off_t i = lseek(seek_data->fd, seek_data->offset, seek_data->oper);
     if (i == (off_t)-1) return ThrowException(ErrnoException(errno));
     return Undefined();
