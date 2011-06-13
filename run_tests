@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# node tests/test-fs-utime.js
+
+node tests/test-fs-seek.js
+
+# stress testing only 
+# node tests/test-fs-seek_stress.js

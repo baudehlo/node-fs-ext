@@ -21,5 +21,7 @@
     "mail" : "helpme@gmail.com",
     "web" : "https://github.com/baudehlo/node-fs-ext/issues"
   },
-  "scripts": { "install": "node-waf configure build" }
+  "scripts": { 
+    "install": "node-waf configure build",
+    "test": "./run_tests" }
 }
