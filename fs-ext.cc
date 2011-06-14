@@ -184,6 +184,7 @@ static Handle<Value> Flock(const Arguments& args) {
 #else
     int i = flock(flock_data->fd, flock_data->oper);
 #endif
+    delete flock_data;
     if (i != 0) return ThrowException(ErrnoException(errno));
     return Undefined();
   }
