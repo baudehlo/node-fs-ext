@@ -75,6 +75,7 @@ static int After(eio_req *req) {
 
   // Dispose of the persistent handle
   cb_destroy(store_data->cb);
+  delete store_data;
 
   return 0;
 }
@@ -183,6 +184,7 @@ static Handle<Value> Flock(const Arguments& args) {
 #else
     int i = flock(flock_data->fd, flock_data->oper);
 #endif
+    delete flock_data;
     if (i != 0) return ThrowException(ErrnoException(errno));
     return Undefined();
   }
@@ -211,6 +213,7 @@ static Handle<Value> Seek(const Arguments& args) {
     return Undefined();
   } else {
     off_t i = lseek(seek_data->fd, seek_data->offset, seek_data->oper);
+    delete seek_data;
     if (i == (off_t)-1) return ThrowException(ErrnoException(errno));
     return Undefined();
   }
