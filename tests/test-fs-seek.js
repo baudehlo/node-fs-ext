@@ -10,24 +10,11 @@
 
 //TODO and Questions
 
-//XXX Test that returned position from seek() is correct
-
 //XXX Combine seek() calls with write() and read() to verify the fd's 
 //  file position is being correctly reset.
 //
 //XXX Test specific values for 'whence' constants?  
 
-//XXX Does seek() return current position correctly?
-//  fseek() doesn't return positions, only ftell() does that
-//  ahh, but lseek() does return current positions  !!!
-//
-//    RETURN VALUE
-//      Upon  successful completion, lseek() returns the resulting offset loca‐
-//      tion as measured in bytes from the beginning of the  file.   On  error,
-//      the  value  (off_t) -1  is  returned  and  errno is set to indicate the
-//      error.
-//  This is important because lseek(fd, 0, 1) does the same thing as
-//    the tell() API
 
 //XXX Actually, if you are going to document the specific values,
 //  0, 1, and 2, for the equivalent 'meanings' SEEK_SET/_CUR/_END,
@@ -61,6 +48,7 @@ var tmp_dir = "/tmp",
     file_path_not = path.join(tmp_dir, 'what.not.seek.test');
 
 var file_fd,
+    result,
     err;
 
 
@@ -92,15 +80,54 @@ function remove_file_wo_error(file_path) {
   }
 }
 
-function expect_errno(api_name, resource, err, expected_errno) {
+
+function expect_value(api_name, err, value_seen, value_expected) {
+  var fault_msg;
+
+  if ( err ) {
+    if ( err instanceof Error ) {
+      fault_msg = api_name + '(): returned error ' + err.message;
+    } else {
+      fault_msg = api_name + '(): returned error ' + err;
+    }
+  } else {
+    if ( value_seen !== value_expected ) {
+      fault_msg = api_name + '(): wrong value ' + value_seen +
+                                   '  (expecting ' + value_expected + ')';
+    }
+  }
+
+  if ( ! fault_msg ) {
+    tests_ok++;
+    if (debug_me) console.log('        OK: %s() returned ', api_name, value_seen);
+  } else {
+    console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
+    console.log('   ARGS: ', util.inspect(arguments));
+  }
+}
+
+
+function expect_errno_(api_name, err, value_seen, expected_errno) {
   var fault_msg;
 
   if (debug_me) console.log('  expected_errno(err): ' + err );
 
-  if ( err  &&  err.code !== expected_errno ) {
-      fault_msg = api_name + '(): expected error ' + expected_errno + ', got another error';
-  } else if ( !err ) {
-    fault_msg = api_name + '(): expected error ' + expected_errno + ', got another error';
+  if ( err ) {
+    if ( err instanceof Error ) {
+      if ( err.code !== undefined ) {
+        if ( err.code !== expected_errno ) {
+            fault_msg = api_name + '(): returned wrong errno \'' + err.message +
+                                      '\'  (expecting ' + expected_errno + ')';
+          }
+      } else {
+        fault_msg = api_name + '(): returned wrong error \'' + err + '\'';
+      }
+    } else {
+      fault_msg = api_name + '(): returned wrong error \'' + err + '\'';
+    }
+  } else {
+    fault_msg = api_name + '(): expected errno \'' + expected_errno + 
+                                 '\', but got result ' + value_seen;
   }
 
   if ( ! fault_msg ) {
@@ -108,23 +135,7 @@ function expect_errno(api_name, resource, err, expected_errno) {
     if (debug_me) console.log(' FAILED OK: ' + api_name );
   } else {
     console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
-    console.log('   ARGS: ', util.inspect(arguments));
-  }
-}
-
-function expect_ok(api_name, resource, err) {
-  var fault_msg;
-
-  if ( err ) {
-    fault_msg = api_name + '(): returned error';
-  }
-
-  if ( ! fault_msg ) {
-    tests_ok++;
-    if (debug_me) console.log('        OK: ' + api_name );
-  } else {
-    console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
-    console.log('   ARGS: ', util.inspect(arguments));
+    if (debug_me) console.log('   ARGS: ', util.inspect(arguments));
   }
 }
 
@@ -177,35 +188,22 @@ if ( tests_run !== tests_ok ) {
 
 var fs_binding = require('../build/default/fs-ext');
 
-if (debug_me) {
-  console.log('  SEEK_SET', fs_binding.SEEK_SET, typeof fs_binding.SEEK_SET);
-  console.log('  SEEK_CUR', fs_binding.SEEK_CUR, typeof fs_binding.SEEK_CUR);
-  console.log('  SEEK_END', fs_binding.SEEK_END, typeof fs_binding.SEEK_END);
-}
+var constant_names = [ 'SEEK_SET',  'SEEK_CUR',  'SEEK_END' ];
 
-tests_run++;
-if ( fs_binding.SEEK_SET !== undefined  &&
-     typeof fs_binding.SEEK_SET === 'number' ) {
-  tests_ok++;
-} else {
-  console.log('FAILURE: SEEK_SET is not defined correctly');  
-}
+constant_names.forEach(function(name){
 
-tests_run++;
-if ( fs_binding.SEEK_CUR !== undefined  &&
-     typeof fs_binding.SEEK_CUR === 'number' ) {
-  tests_ok++;
-} else {
-  console.log('FAILURE: SEEK_CUR is not defined correctly');  
-}
+  if (debug_me) console.log('  %s    %j    %j', name, fs_binding[name], typeof fs_binding[name]);
 
-tests_run++;
-if ( fs_binding.SEEK_END !== undefined  &&
-     typeof fs_binding.SEEK_END === 'number' ) {
-  tests_ok++;
-} else {
-  console.log('FAILURE: SEEK_END is not defined correctly');  
-}
+  tests_run++;
+  if ( fs_binding[name] !== undefined  &&
+     typeof fs_binding[name] === 'number' ) {
+    tests_ok++;
+  } else {
+    console.log('FAILURE: %s is not defined correctly', name);  
+    console.log('  %s    %j    %j', name, fs_binding[name], typeof fs_binding[name]);
+  }
+});
+
 
 
 // Test bad argument handling   -  -  -  -  -  -  -  -  -  -  -
@@ -247,68 +245,72 @@ if (err) {
 // fd value is negative 
 
 tests_run++;
+result = err = undefined;
 try {
-  err = fs.seekSync(-9, 0, 0);
+  result = fs.seekSync(-9, 0, 0);
 } catch (e) {
   err = e;
 }
-expect_errno('seekSync', -9, err, 'EBADF');
+expect_errno_('seekSync', err, result, 'EBADF');
 
 
 // fd value is 'impossible' 
 
 tests_run++;
+result = err = undefined;
 try {
-  err = fs.seekSync(98765, 0, 0);
+  result = fs.seekSync(98765, 0, 0);
 } catch (e) {
   err = e;
 }
-expect_errno('seekSync', 98765, err, 'EBADF');
+expect_errno_('seekSync', err, result, 'EBADF');
 
 
 // whence value is invalid
 
 tests_run++;
+result = err = undefined;
 try {
-  err = fs.seekSync(file_fd, 0, 98765);
+  result = fs.seekSync(file_fd, 0, 98765);
 } catch (e) {
   err = e;
 }
-expect_errno('seekSync', file_fd, err, 'EINVAL');
+expect_errno_('seekSync', err, result, 'EINVAL');
 
 
 tests_run++;
+result = err = undefined;
 try {
-  err = fs.seekSync(file_fd, 0, -99);
+  result = fs.seekSync(file_fd, 0, -99);
 } catch (e) {
   err = e;
 }
-expect_errno('seekSync', file_fd, err, 'EINVAL');
+expect_errno_('seekSync', err, result, 'EINVAL');
 
 
 // offset value is negative
 
 tests_run++;
+result = err = undefined;
 try {
-  err = fs.seekSync(file_fd, -98765, 0);
+  result = fs.seekSync(file_fd, -98765, 0);
 } catch (e) {
   err = e;
 }
-expect_errno('seekSync', file_fd, err, 'EINVAL');
+expect_errno_('seekSync', err, result, 'EINVAL');
 
 
 // offset value is "too big" (beyond end of file) 
+//   This unexpectedly 'works' ...
 
 tests_run++;
+result = err = undefined;
 try {
-  err = fs.seekSync(file_fd, 98765, 0);
+  result = fs.seekSync(file_fd, 98765, 0);
 } catch (e) {
   err = e;
 }
-//console.log('  after bad offset (too far), got err of %j', err);
-//expect_errno('seekSync', file_fd, err, 'EINVAL');
-expect_ok('seekSync', file_fd, err);
-
+expect_value('seekSync', err, result, 98765);
 
 
 // Test valid calls: seekSync  -  -  -  -  -  -  -  -  -  - 
@@ -316,67 +318,73 @@ expect_ok('seekSync', file_fd, err);
 // SEEK_SET to 0
 
 tests_run++;
+result = err = undefined;
 try {
-  err = fs.seekSync(file_fd, 0, 0);
+  result = fs.seekSync(file_fd, 0, 0);
 } catch (e) {
   err = e;
 }
-expect_ok('seekSync', file_fd, err);
+expect_value('seekSync', err, result, 0);
 
 
 // SEEK_CUR to 0
 
 tests_run++;
+result = err = undefined;
 try {
-  err = fs.seekSync(file_fd, 0, 1);
+  result = fs.seekSync(file_fd, 0, 1);
 } catch (e) {
   err = e;
 }
-expect_ok('seekSync', file_fd, err);
+expect_value('seekSync', err, result, 0);
 
 
 // SEEK_END to 0
 
 tests_run++;
+result = err = undefined;
 try {
-  err = fs.seekSync(file_fd, 0, 2);
+  result = fs.seekSync(file_fd, 0, 2);
 } catch (e) {
   err = e;
 }
-expect_ok('seekSync', file_fd, err);
+expect_value('seekSync', err, result, 0);
 
 
 // SEEK_SET to 0 using published constant
 
 tests_run++;
+result = err = undefined;
 try {
-  err = fs.seekSync(file_fd, 0, fs_binding.SEEK_SET);
+  result = fs.seekSync(file_fd, 0, fs_binding.SEEK_SET);
 } catch (e) {
   err = e;
 }
-expect_ok('seekSync', file_fd, err);
+expect_value('seekSync', err, result, 0);
 
 
 // SEEK_CUR to 0 using published constant
 
 tests_run++;
+result = err = undefined;
 try {
-  err = fs.seekSync(file_fd, 0, fs_binding.SEEK_CUR);
+  result = fs.seekSync(file_fd, 0, fs_binding.SEEK_CUR);
 } catch (e) {
   err = e;
 }
-expect_ok('seekSync', file_fd, err);
+expect_value('seekSync', err, result, 0);
 
 
 // SEEK_END to 0 using published constant
 
 tests_run++;
+result = err = undefined;
 try {
-  err = fs.seekSync(file_fd, 0, fs_binding.SEEK_END);
+  result = fs.seekSync(file_fd, 0, fs_binding.SEEK_END);
 } catch (e) {
   err = e;
 }
-expect_ok('seekSync', file_fd, err);
+expect_value('seekSync', err, result, 0);
 
 
 
@@ -386,23 +394,23 @@ expect_ok('seekSync', file_fd, err);
 // SEEK_SET to 0
 
 tests_run++;
-fs.seek(file_fd, 0, 0, function(err) {
-  expect_ok('seek', file_fd, err);
+fs.seek(file_fd, 0, 0, function(err, result) {
+  expect_value('seek', err, result, 0);
 
   tests_run++;
-  fs.seek(file_fd, 0, 1, function(err) {
-    expect_ok('seek', file_fd, err);
+  fs.seek(file_fd, 0, 1, function(err, result) {
+    expect_value('seek', err, result, 0);
 
     tests_run++;
-    fs.seek(file_fd, 0, 2, function(err) {
-      expect_ok('seek', file_fd, err);
+    fs.seek(file_fd, 0, 2, function(err, result) {
+      expect_value('seek', err, result, 0);
 
       // Test invalid calls: seek  -  -  -  -  -  -  -  -  - 
 
       // offset value is negative
       tests_run++;
-      fs.seek(file_fd, -98765, 0, function(err) {
-        expect_errno('seek', file_fd, err, 'EINVAL');
+      fs.seek(file_fd, -98765, 0, function(err, result) {
+        expect_errno_('seek', err, result, 'EINVAL');
 
       });
     });

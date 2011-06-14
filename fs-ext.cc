@@ -52,8 +52,8 @@ static int After(eio_req *req) {
   // there is always at least one argument. "error"
   int argc = 1;
 
-  // Allocate space for one arg.
-  Local<Value> argv[1];
+  // Allocate space for two args: error plus possible additional result
+  Local<Value> argv[2];
 
   // NOTE: This may be needed to be changed if something returns a -1
   // for a success, which is possible.
@@ -63,6 +63,16 @@ static int After(eio_req *req) {
   } else {
     // error value is empty or null for non-error.
     argv[0] = Local<Value>::New(Null());
+
+    // Assume we use both args
+    argc = 2;
+
+    //XXX Unlike n node_file.cc, where they can use the EIO code to switch
+    //  handling the various operation returns, here we have no type value to 
+    //  switch on, in order to decide what the second argv[1] value should 
+    //  be.  For now just always return the ->result value to the callback.
+    
+    argv[1] = Integer::New(req->result);
   }
 
   TryCatch try_catch;
@@ -89,7 +99,7 @@ static int EIO_Seek(eio_req *req) {
     req->result = -1;
     req->errorno = errno;
   } else {
-    req->result = 0;
+    req->result = i;
   }
 
   return 0;
@@ -215,7 +225,10 @@ static Handle<Value> Seek(const Arguments& args) {
     off_t i = lseek(seek_data->fd, seek_data->offset, seek_data->oper);
     delete seek_data;
     if (i == (off_t)-1) return ThrowException(ErrnoException(errno));
-    return Undefined();
+//  return Integer::New(i);
+    return scope.Close(Integer::New(i));
+    //XXX What is the significance/difference between the above two lines?
+    //  We see both used in node_file.cc for instance.
   }
 
 }
