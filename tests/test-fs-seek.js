@@ -1,18 +1,31 @@
 
-// Test these APIs published in extension module 'fs-ext'
+// Test these APIs as published in extension module 'fs-ext'
 
-// ### fs.seek(fd, offset, whence, [callback])
+//    fs.seek(fd, offset, whence, [callback])
+//
+//  Asynchronous lseek(2).  
+//
+//  callback will be given two arguments (err, currFilePos).
+// 
+//  whence can be 0 (SEEK_SET) to set the new position in bytes to offset, 
+//  1 (SEEK_CUR) to set the new position to the current position plus offset 
+//  bytes (can be negative), or 2 (SEEK_END) to set to the end of the file 
+//  plus offset bytes (usually negative or zero to seek to the end of the file).
+//
+//    fs.seekSync(fd, offset, whence)
+//
+//  Synchronous lseek(2). Throws an exception on error.  Returns current
+//  file position.
 
-// ### fs.seekSync(fd, offset, whence)
 
 // Ideas for testing borrowed from bnoordhuis (Ben Noordhuis)
 
 
 //TODO and Questions
 
-//XXX Combine seek() calls with write() and read() to verify the fd's 
-//  file position is being correctly reset.
-//
+//XXX Combine seek() calls with calls to write() and read() to verify that 
+//  the file position is being correctly reset.
+
 //XXX Test specific values for 'whence' constants?  
 
 
@@ -107,7 +120,7 @@ function expect_value(api_name, err, value_seen, value_expected) {
 }
 
 
-function expect_errno_(api_name, err, value_seen, expected_errno) {
+function expect_errno(api_name, err, value_seen, expected_errno) {
   var fault_msg;
 
   if (debug_me) console.log('  expected_errno(err): ' + err );
@@ -251,7 +264,7 @@ try {
 } catch (e) {
   err = e;
 }
-expect_errno_('seekSync', err, result, 'EBADF');
+expect_errno('seekSync', err, result, 'EBADF');
 
 
 // fd value is 'impossible' 
@@ -263,7 +276,7 @@ try {
 } catch (e) {
   err = e;
 }
-expect_errno_('seekSync', err, result, 'EBADF');
+expect_errno('seekSync', err, result, 'EBADF');
 
 
 // whence value is invalid
@@ -275,7 +288,7 @@ try {
 } catch (e) {
   err = e;
 }
-expect_errno_('seekSync', err, result, 'EINVAL');
+expect_errno('seekSync', err, result, 'EINVAL');
 
 
 tests_run++;
@@ -285,7 +298,7 @@ try {
 } catch (e) {
   err = e;
 }
-expect_errno_('seekSync', err, result, 'EINVAL');
+expect_errno('seekSync', err, result, 'EINVAL');
 
 
 // offset value is negative
@@ -297,7 +310,7 @@ try {
 } catch (e) {
   err = e;
 }
-expect_errno_('seekSync', err, result, 'EINVAL');
+expect_errno('seekSync', err, result, 'EINVAL');
 
 
 // offset value is "too big" (beyond end of file) 
@@ -410,7 +423,7 @@ fs.seek(file_fd, 0, 0, function(err, result) {
       // offset value is negative
       tests_run++;
       fs.seek(file_fd, -98765, 0, function(err, result) {
-        expect_errno_('seek', err, result, 'EINVAL');
+        expect_errno('seek', err, result, 'EINVAL');
 
       });
     });

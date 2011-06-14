@@ -1,15 +1,25 @@
 
-// Stress test these APIs published in extension module 'fs-ext'
+// Stress test these APIs as published in extension module 'fs-ext'
 // Specifically, try to exercise any memory leaks by simple repetition.
 
-// ### fs.seek(fd, offset, whence, [callback])
+//    fs.seek(fd, offset, whence, [callback])
+//
+//  Asynchronous lseek(2).  
+//
+//  callback will be given two arguments (err, currFilePos).
+// 
+//  whence can be 0 (SEEK_SET) to set the new position in bytes to offset, 
+//  1 (SEEK_CUR) to set the new position to the current position plus offset 
+//  bytes (can be negative), or 2 (SEEK_END) to set to the end of the file 
+//  plus offset bytes (usually negative or zero to seek to the end of the file).
+//
+//    fs.seekSync(fd, offset, whence)
+//
+//  Synchronous lseek(2). Throws an exception on error.  Returns current
+//  file position.
 
-// ### fs.seekSync(fd, offset, whence)
 
 // Ideas for testing borrowed from bnoordhuis (Ben Noordhuis)
-
-
-//TODO and Questions
 
 
 // Make this new-built copy of fs-ext available for testing
@@ -32,6 +42,7 @@ var tmp_dir = "/tmp",
     file_path_not = path.join(tmp_dir, 'what.not.seek.test');
 
 var file_fd,
+    result,
     err;
 
 
@@ -76,15 +87,54 @@ function display_memory_usage_now() {
                                 usage.heapTotal, usage.vsize);
 }
 
-function expect_errno(api_name, resource, err, expected_errno) {
+
+function expect_value(api_name, err, value_seen, value_expected) {
+  var fault_msg;
+
+  if ( err ) {
+    if ( err instanceof Error ) {
+      fault_msg = api_name + '(): returned error ' + err.message;
+    } else {
+      fault_msg = api_name + '(): returned error ' + err;
+    }
+  } else {
+    if ( value_seen !== value_expected ) {
+      fault_msg = api_name + '(): wrong value ' + value_seen +
+                                   '  (expecting ' + value_expected + ')';
+    }
+  }
+
+  if ( ! fault_msg ) {
+    tests_ok++;
+    if (debug_me) console.log('        OK: %s() returned ', api_name, value_seen);
+  } else {
+    console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
+    console.log('   ARGS: ', util.inspect(arguments));
+  }
+}
+
+
+function expect_errno(api_name, err, value_seen, expected_errno) {
   var fault_msg;
 
   if (debug_me) console.log('  expected_errno(err): ' + err );
 
-  if ( err  &&  err.code !== expected_errno ) {
-      fault_msg = api_name + '(): expected error ' + expected_errno + ', got another error';
-  } else if ( !err ) {
-    fault_msg = api_name + '(): expected error ' + expected_errno + ', got another error';
+  if ( err ) {
+    if ( err instanceof Error ) {
+      if ( err.code !== undefined ) {
+        if ( err.code !== expected_errno ) {
+            fault_msg = api_name + '(): returned wrong errno \'' + err.message +
+                                      '\'  (expecting ' + expected_errno + ')';
+          }
+      } else {
+        fault_msg = api_name + '(): returned wrong error \'' + err + '\'';
+      }
+    } else {
+      fault_msg = api_name + '(): returned wrong error \'' + err + '\'';
+    }
+  } else {
+    fault_msg = api_name + '(): expected errno \'' + expected_errno + 
+                                 '\', but got result ' + value_seen;
   }
 
   if ( ! fault_msg ) {
@@ -92,25 +142,10 @@ function expect_errno(api_name, resource, err, expected_errno) {
     if (debug_me) console.log(' FAILED OK: ' + api_name );
   } else {
     console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
-    console.log('   ARGS: ', util.inspect(arguments));
+    if (debug_me) console.log('   ARGS: ', util.inspect(arguments));
   }
 }
 
-function expect_ok(api_name, resource, err) {
-  var fault_msg;
-
-  if ( err ) {
-    fault_msg = api_name + '(): returned error';
-  }
-
-  if ( ! fault_msg ) {
-    tests_ok++;
-    if (debug_me) console.log('        OK: ' + api_name );
-  } else {
-    console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
-    console.log('   ARGS: ', util.inspect(arguments));
-  }
-}
 
 
 // Setup for testing    -  -  -  -  -  -  -  -  -  -  -  -
@@ -175,8 +210,9 @@ if( 1 ) {
 
   for( var i=0 ; i<how_many_times ; i++ ) {
     tests_run++;
-    err = fs.seekSync(file_fd, 0, 0);
-    expect_ok('seekSync', file_fd, err);
+    result = err = undefined;
+    result = fs.seekSync(file_fd, 0, 0);
+    expect_value('seekSync', err, result, 0);
   }
 
   console.log('  After %d calls to successful seekSync():', how_many_times);
@@ -192,8 +228,8 @@ if( 1 ) {
   how_many_done  = 0;
  
   tests_run++;
-  fs.seek(file_fd, 0, 0, function func_good_seek_cb(err){
-    expect_ok('seek', file_fd, err);
+  fs.seek(file_fd, 0, 0, function func_good_seek_cb(err, result){
+    expect_value('seek', err, result, 0);
     if (debug_me) console.log('    seek call counter   %d', how_many_times );
 
     how_many_done += 1;
@@ -220,8 +256,8 @@ function test_failing_seek() {
     how_many_done  = 0;
  
     tests_run++;
-    fs.seek(-99, 0, 0, function func_good_seek_cb(err){
-      expect_errno('seek', -99, err, 'EBADF');
+    fs.seek(-99, 0, 0, function func_good_seek_cb(err, result){
+      expect_errno('seek', err, result, 'EBADF');
       if (debug_me) console.log('    seek call counter   %d', how_many_times );
 
       how_many_done += 1;
@@ -239,122 +275,6 @@ function test_failing_seek() {
 
 }
 
-//  } else {
-//    tests_run++;
-//    fs.seek(-99, 0, 0, function hum_ho_2(err){
-//      expect_errno('seek', -99, err, 'EBADF');
-//      if (debug_me) console.log('    seek call counter   %d', how_many_times );
-//
-//      how_many_times -= 1;
-//      if ( how_many_times > 0 ) {
-//        tests_run++;
-//        fs.seek(-99, 0, 0, hum_ho_2 );
-//        return;
-//      }
-//
-//      display_memory_usage_now();
-//      console.log('    End time is %s', new Date());
-//    });
-//  }
-//}
-//
-
-//     PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
-//    2081 Tom       20   0  211m 164m 4580 R 94.6 16.4   0:04.63 node
-// vs. sync 
-//    2074 Tom       20   0 56076 7636 4224 S  3.6  0.7   0:00.11 node
-// vs. async 
-//    2213 Tom       20   0 76668  28m 4400 R 97.0  2.9   0:12.55 node
-
-// after delete chg for seekSync path
-//    2264 Tom       20   0 56480 9540 4628 R 95.7  0.9   0:05.00 node
-// after chg for async, on error-returning path
-//    2348 Tom       20   0 60796  27m 4496 R 97.4  2.7   0:37.01 node
-
-// sync
-//  Start time is Sun Jun 12 2011 16:50:54 GMT-0500 (CDT)
-//  memory usage:  { "rss":         7815168,
-//                   "vsize":      57425920,
-//                   "heapTotal":   2853056,
-//                   "heapUsed":    1851472}
-//  memory usage:  { "rss":       249483264,
-//                   "vsize":     297807872,
-//                   "heapTotal":   4388064,
-//                   "heapUsed":    1772168}
-//    End time is Sun Jun 12 2011 16:51:02 GMT-0500 (CDT)
-//  Tests run: 10000007     ok: 10000007
-
-// async
-//  Start time is Sun Jun 12 2011 16:45:24 GMT-0500 (CDT)
-//  memory usage:  { "rss":         7573504,
-//                   "vsize":      57425920,
-//                   "heapTotal":   2861216,
-//                   "heapUsed":    1828544}
-//  memory usage:  { "rss":        34828288,
-//                   "vsize":      83243008,
-//                   "heapTotal":   4236992,
-//                   "heapUsed":    2377772}
-//    End time is Sun Jun 12 2011 16:45:40 GMT-0500 (CDT)
-//  Tests run: 1000007     ok: 1000007
-
-// noop
-//
-//  Start time is Sun Jun 12 2011 16:54:17 GMT-0500 (CDT)
-//  memory usage:  { "rss":         7827456,
-//                   "vsize":      57425920,
-//                   "heapTotal":   2844896,
-//                   "heapUsed":    1853660}
-//  memory usage:  { "rss":         9220096,
-//                   "vsize":      57790464,
-//                   "heapTotal":   4249344,
-//                   "heapUsed":    1775448}
-//    End time is Sun Jun 12 2011 16:54:17 GMT-0500 (CDT)
-//  Tests run: 10000007     ok: 10000007
-//
-//
-// after delete chg for seekSync path
-//  Start time is Sun Jun 12 2011 16:59:37 GMT-0500 (CDT)
-//  memory usage:  { "rss":         7839744,
-//                   "vsize":      57425920,
-//                   "heapTotal"    2853056,
-//                   "heapUsed":    1855784}
-//  memory usage:  { "rss":         9768960,
-//                   "vsize":      57839616,
-//                   "heapTotal":   4257504,
-//                   "heapUsed":    1780820}
-//    End time is Sun Jun 12 2011 16:59:45 GMT-0500 (CDT)
-//  Tests run: 10000007     ok: 10000007
-//
-//
-// after delete chg for async path
-//  Start time is Sun Jun 12 2011 17:06:16 GMT-0500 (CDT)
-//  memory usage:  { "rss":         7831552,
-//                   "vsize":      57425920,
-//                   "heapTotal":   2853056,
-//                   "heapUsed":    1858488}
-//  memory usage:  { "rss":         9351168,
-//                   "vsize":      57835520,
-//                   "heapTotal":   4232928,
-//                   "heapUsed":    2387816}
-//    End time is Sun Jun 12 2011 17:06:32 GMT-0500 (CDT)
-//  Tests run: 1000007     ok: 1000007
-//
-// after chg for async, on error-returning path
-//
-//  2348 Tom       20   0 60796  27m 4496 R 97.4  2.7   0:37.01 node
-//
-//  Start time is Sun Jun 12 2011 17:20:48 GMT-0500 (CDT)
-//  memory usage:  { "rss":         7839744,
-//                   "vsize":      57425920,
-//                   "heapTotal":   2844896,
-//                   "heapUsed":    1864576}
-//  memory usage:  { "rss":        27209728,
-//                   "vsize":      60948480,
-//                   "heapTotal":  22005504,
-//                   "heapUsed":    6403888}
-//    End time is Sun Jun 12 2011 17:21:29 GMT-0500 (CDT)
-//  Tests run: 1000007     ok: 1000007
-//
 
 
 //------------------------------------------------------------------------------
