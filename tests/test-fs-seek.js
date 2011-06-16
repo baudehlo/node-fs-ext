@@ -105,8 +105,8 @@ function expect_value(api_name, err, value_seen, value_expected) {
     }
   } else {
     if ( value_seen !== value_expected ) {
-      fault_msg = api_name + '(): wrong value ' + value_seen +
-                                   '  (expecting ' + value_expected + ')';
+      fault_msg = api_name + '(): wrong value \'' + value_seen +
+                                   '\'  (expecting ' + value_expected + ')';
     }
   }
 

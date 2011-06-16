@@ -37,9 +37,17 @@ using namespace node;
 
 struct store_data_t {
   Persistent<Function> *cb;
+  int fs_op;  // operation type within this module
   int fd;
   int oper;
   off_t offset;
+};
+
+enum
+{
+  FS_OP_FLOCK,
+  FS_OP_SEEK,
+  FS_OP_UTIME
 };
 
 static int After(eio_req *req) {
@@ -64,15 +72,20 @@ static int After(eio_req *req) {
     // error value is empty or null for non-error.
     argv[0] = Local<Value>::New(Null());
 
-    // Assume we use both args
-    argc = 2;
+    switch (store_data->fs_op) {
+      // These operations have no data to pass other than "error".
+      case FS_OP_FLOCK:
+        argc = 1;
+        break;
 
-    //XXX Unlike n node_file.cc, where they can use the EIO code to switch
-    //  handling the various operation returns, here we have no type value to 
-    //  switch on, in order to decide what the second argv[1] value should 
-    //  be.  For now just always return the ->result value to the callback.
-    
-    argv[1] = Integer::New(req->result);
+      case FS_OP_SEEK:
+        argc = 2;
+        argv[1] = Integer::New(req->result);
+        break;
+
+      default:
+        assert(0 && "Unhandled op type value");
+    }
   }
 
   TryCatch try_catch;
@@ -180,6 +193,7 @@ static Handle<Value> Flock(const Arguments& args) {
 
   store_data_t* flock_data = new store_data_t();
   
+  flock_data->fs_op = FS_OP_FLOCK;
   flock_data->fd = args[0]->Int32Value();
   flock_data->oper = args[1]->Int32Value();
 
@@ -200,7 +214,7 @@ static Handle<Value> Flock(const Arguments& args) {
   }
 }
 
-// TODO: 
+
 static Handle<Value> Seek(const Arguments& args) {
   HandleScope scope;
 
@@ -212,6 +226,7 @@ static Handle<Value> Seek(const Arguments& args) {
 
   store_data_t* seek_data = new store_data_t();
 
+  seek_data->fs_op = FS_OP_SEEK;
   seek_data->fd = args[0]->Int32Value();
   seek_data->oper = args[2]->Int32Value();
   seek_data->offset = args[1]->Int32Value();
@@ -225,10 +240,7 @@ static Handle<Value> Seek(const Arguments& args) {
     off_t i = lseek(seek_data->fd, seek_data->offset, seek_data->oper);
     delete seek_data;
     if (i == (off_t)-1) return ThrowException(ErrnoException(errno));
-//  return Integer::New(i);
     return scope.Close(Integer::New(i));
-    //XXX What is the significance/difference between the above two lines?
-    //  We see both used in node_file.cc for instance.
   }
 
 }
