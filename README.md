@@ -40,13 +40,16 @@ Synchronous flock(2). Throws an exception on error.
 
 ### fs.seek(fd, offset, whence, [callback])
 
-Asynchronous lseek(2). No arguments other than a possible error are passed to
-the callback. `whence` can be 0 (SEEK_SET) to set the new position in bytes
-to `offset`, 1 (SEEK_CUR) to set the new position to the current position
-plus `offset` bytes (can be negative), or 2 (SEEK_END) to set to the end
-of the file plus `offset` bytes (usually negative or zero to seek to the end
-of the file).
+Asynchronous lseek(2).  
+
+callback will be given two arguments (err, currFilePos).
+
+whence can be 0 (SEEK_SET) to set the new position in bytes to offset, 
+1 (SEEK_CUR) to set the new position to the current position plus offset 
+bytes (can be negative), or 2 (SEEK_END) to set to the end of the file 
+plus offset bytes (usually negative or zero to seek to the end of the file).
 
 ### fs.seekSync(fd, offset, whence)
 
-Synchronous lseek(2). Throws an exception on error.
+Synchronous lseek(2). Throws an exception on error.  Returns current
+file position.
