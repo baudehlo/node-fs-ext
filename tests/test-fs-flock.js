@@ -353,8 +353,17 @@ expect_ok('flockSync', file_fd, err);
 // SEEK_SET to 0
 
 tests_run++;
-fs.flock(file_fd, 'sh', function(err) {
+  tests_run++;
+fs.flock(file_fd, 'sh', function(err, extra) {
   expect_ok('flock', file_fd, err);
+
+  // After a change to returning arguments to async callback routines,
+  //   check that this API still receives only one argument.
+  if ( extra === undefined ) {
+        tests_ok++;
+  } else {
+    console.log('  async flock() callback received more than one argument');
+  }
 
   tests_run++;
   fs.flock(file_fd, 'exnb', function(err) {

@@ -37,9 +37,17 @@ using namespace node;
 
 struct store_data_t {
   Persistent<Function> *cb;
+  int fs_op;  // operation type within this module
   int fd;
   int oper;
   off_t offset;
+};
+
+enum
+{
+  FS_OP_FLOCK,
+  FS_OP_SEEK,
+  FS_OP_UTIME
 };
 
 static int After(eio_req *req) {
@@ -52,8 +60,8 @@ static int After(eio_req *req) {
   // there is always at least one argument. "error"
   int argc = 1;
 
-  // Allocate space for one arg.
-  Local<Value> argv[1];
+  // Allocate space for two args: error plus possible additional result
+  Local<Value> argv[2];
 
   // NOTE: This may be needed to be changed if something returns a -1
   // for a success, which is possible.
@@ -63,6 +71,21 @@ static int After(eio_req *req) {
   } else {
     // error value is empty or null for non-error.
     argv[0] = Local<Value>::New(Null());
+
+    switch (store_data->fs_op) {
+      // These operations have no data to pass other than "error".
+      case FS_OP_FLOCK:
+        argc = 1;
+        break;
+
+      case FS_OP_SEEK:
+        argc = 2;
+        argv[1] = Integer::New(req->result);
+        break;
+
+      default:
+        assert(0 && "Unhandled op type value");
+    }
   }
 
   TryCatch try_catch;
@@ -89,7 +112,7 @@ static int EIO_Seek(eio_req *req) {
     req->result = -1;
     req->errorno = errno;
   } else {
-    req->result = 0;
+    req->result = i;
   }
 
   return 0;
@@ -170,6 +193,7 @@ static Handle<Value> Flock(const Arguments& args) {
 
   store_data_t* flock_data = new store_data_t();
   
+  flock_data->fs_op = FS_OP_FLOCK;
   flock_data->fd = args[0]->Int32Value();
   flock_data->oper = args[1]->Int32Value();
 
@@ -190,7 +214,7 @@ static Handle<Value> Flock(const Arguments& args) {
   }
 }
 
-// TODO: 
+
 static Handle<Value> Seek(const Arguments& args) {
   HandleScope scope;
 
@@ -202,6 +226,7 @@ static Handle<Value> Seek(const Arguments& args) {
 
   store_data_t* seek_data = new store_data_t();
 
+  seek_data->fs_op = FS_OP_SEEK;
   seek_data->fd = args[0]->Int32Value();
   seek_data->oper = args[2]->Int32Value();
   seek_data->offset = args[1]->Int32Value();
@@ -215,7 +240,7 @@ static Handle<Value> Seek(const Arguments& args) {
     off_t i = lseek(seek_data->fd, seek_data->offset, seek_data->oper);
     delete seek_data;
     if (i == (off_t)-1) return ThrowException(ErrnoException(errno));
-    return Undefined();
+    return scope.Close(Integer::New(i));
   }
 
 }
