@@ -62,13 +62,15 @@ var tmp_dir = "/tmp",
 
 var file_fd,
     result,
-    err;
+    err,
+    offset_big;
 
 
 // Report on test results -  -  -  -  -  -  -  -  -  -  -  -
 
 // Clean up and report on final success or failure of tests here
-process.addListener('exit', function() {
+process.addListener('exit', function listen_for_exit(exit_code) {
+  //if (debug_me) console.log('    exit_code  %j', exit_code);
 
   try {
     fs.closeSync(file_fd);
@@ -79,8 +81,14 @@ process.addListener('exit', function() {
   remove_file_wo_error(file_path);
 
   console.log('Tests run: %d     ok: %d', tests_run, tests_ok);
-  assert.equal(tests_ok, tests_run, 'One or more subtests failed');
+
+  if ( ! exit_code  &&  tests_ok !== tests_run ) {
+    console.log('One or more subtests failed!');
+    process.removeListener('exit', listen_for_exit);
+    process.exit(1);
+  }
 });
+
 
 
 // Test helpers -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
@@ -123,7 +131,7 @@ function expect_value(api_name, err, value_seen, value_expected) {
 function expect_errno(api_name, err, value_seen, expected_errno) {
   var fault_msg;
 
-  if (debug_me) console.log('  expected_errno(err): ' + err );
+  if (debug_me) console.log('  expected_errno(err):  %j', err );
 
   if ( err ) {
     if ( err instanceof Error ) {
@@ -134,9 +142,11 @@ function expect_errno(api_name, err, value_seen, expected_errno) {
           }
       } else {
         fault_msg = api_name + '(): returned wrong error \'' + err + '\'';
+        console.log('  (We see non-errno error %j', err);
       }
     } else {
       fault_msg = api_name + '(): returned wrong error \'' + err + '\'';
+      console.log('  (We see non-Error error %j', err);
     }
   } else {
     fault_msg = api_name + '(): expected errno \'' + expected_errno + 
@@ -151,6 +161,45 @@ function expect_errno(api_name, err, value_seen, expected_errno) {
     if (debug_me) console.log('   ARGS: ', util.inspect(arguments));
   }
 }
+
+
+function expect_error(api_name, err, value_seen, expected_error) {
+  var fault_msg;
+
+  if (debug_me) console.log('  expected_error(err):  %j', err );
+
+  if ( err ) {
+    if ( err instanceof Error ) {
+      if ( err.code !== undefined ) {
+          fault_msg = api_name + '(): returned wrong error \'' + err.message +
+                                    '\'  (expecting ' + expected_error + ')';
+      } else if ( err.message !== undefined ) {
+        if ( err.message !== expected_error ) {
+          fault_msg = api_name + '(): returned wrong error \'' + err + '\'';
+          console.log('  (We see non-errno error %j', err);
+        }
+      } else {
+        fault_msg = api_name + '(): returned wrong error \'' + err + '\'';
+        console.log('  (We see non-errno error %j', err);
+      }
+    } else {
+      fault_msg = api_name + '(): returned wrong error \'' + err + '\'';
+      console.log('  (We see non-Error error %j', err);
+    }
+  } else {
+    fault_msg = api_name + '(): expected errno \'' + expected_errno + 
+                                 '\', but got result ' + value_seen;
+  }
+
+  if ( ! fault_msg ) {
+    tests_ok++;
+    if (debug_me) console.log(' FAILED OK: ' + api_name );
+  } else {
+    console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
+    if (debug_me) console.log('   ARGS: ', util.inspect(arguments));
+  }
+}
+
 
 
 // Setup for testing    -  -  -  -  -  -  -  -  -  -  -  -
@@ -224,35 +273,25 @@ constant_names.forEach(function(name){
 // fd value is undefined 
 
 tests_run++;
+result = err = undefined;
 try {
-  err = fs.seekSync(undefined, 0, 0);
+  result = fs.seekSync(undefined, 0, 0);
 } catch (e) {
   err = e;
 }
-
-if (err) {
-  if (debug_me) console.log('    err    %j', err);
-  tests_ok++;
-} else {
-  if (debug_me) console.log('    expected error from undefined fd argument');
-}
+expect_error('seekSync', err, result, 'Bad argument');
 
 
 // fd value is non-number 
 
 tests_run++;
+result = err = undefined;
 try {
-  err = fs.seekSync('foo', 0, 0);
+  result = fs.seekSync('foo', 0, 0);
 } catch (e) {
   err = e;
 }
-
-if (err) {
-  if (debug_me) console.log('    err    %j', err);
-  tests_ok++;
-} else {
-  if (debug_me) console.log('    expected error from non-numeric fd argument');
-}
+expect_error('seekSync', err, result, 'Bad argument');
 
 
 // fd value is negative 
@@ -313,6 +352,18 @@ try {
 expect_errno('seekSync', err, result, 'EINVAL');
 
 
+// offset value is non-integer
+
+tests_run++;
+result = err = undefined;
+try {
+  result = fs.seekSync(file_fd, 4.0001, 0);
+} catch (e) {
+  err = e;
+}
+expect_error('seekSync', err, result, 'Not an integer');
+
+
 // offset value is "too big" (beyond end of file) 
 //   This unexpectedly 'works' ...
 
@@ -324,6 +375,68 @@ try {
   err = e;
 }
 expect_value('seekSync', err, result, 98765);
+
+
+// offset value is "very big" (from below to beyond 32 bits) 
+
+tests_run++;
+result = err = undefined;
+offset_big = 2 * 1024 * 1024 * 1024 - 1;
+try {
+  result = fs.seekSync(file_fd, offset_big, 0);
+} catch (e) {
+  err = e;
+}
+expect_value('seekSync', err, result, offset_big);
+
+
+tests_run++;
+result = err = undefined;
+offset_big = 2 * 1024 * 1024 * 1024;
+try {
+  result = fs.seekSync(file_fd, offset_big, 0);
+} catch (e) {
+  err = e;
+}
+expect_value('seekSync', err, result, offset_big);
+
+
+tests_run++;
+result = err = undefined;
+offset_big = 42 * 1024 * 1024 * 1024;
+try {
+  result = fs.seekSync(file_fd, offset_big, 0);
+} catch (e) {
+  err = e;
+}
+expect_value('seekSync', err, result, offset_big);
+
+
+tests_run++;
+result = err = undefined;
+offset_big = 8 * 1024 * 1024 * 1024 * 1024 - 1;
+// Linux is limited to 43 bits for file position values?
+try {
+  result = fs.seekSync(file_fd, offset_big, 0);
+} catch (e) {
+  err = e;
+}
+expect_value('seekSync', err, result, offset_big);
+
+
+tests_run++;
+result = err = undefined;
+offset_big = 16 * 1024 * 1024 * 1024 * 1024;
+// Linux is limited to 43 bits for file position values?
+//console.log('    offset_big   %s    %s', offset_big.toString(), offset_big.toString(16) );
+try {
+  result = fs.seekSync(file_fd, offset_big, 0);
+  //console.log('    result       %s    %s', result.toString(), result.toString(16) );
+} catch (e) {
+  err = e;
+}
+expect_errno('seekSync', err, result, 'EINVAL');
+
 
 
 // Test valid calls: seekSync  -  -  -  -  -  -  -  -  -  - 
@@ -425,6 +538,12 @@ fs.seek(file_fd, 0, 0, function(err, result) {
       fs.seek(file_fd, -98765, 0, function(err, result) {
         expect_errno('seek', err, result, 'EINVAL');
 
+        // offset value is quite large (over 32 bits)
+        tests_run++;
+        offset_big = 42 * 1024 * 1024 * 1024;
+        fs.seek(file_fd, offset_big, 0, function(err, result) {
+          expect_value('seek', err, result, offset_big);
+        });
       });
     });
   });
