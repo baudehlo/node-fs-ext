@@ -80,7 +80,7 @@ static int After(eio_req *req) {
 
       case FS_OP_SEEK:
         argc = 2;
-        argv[1] = Integer::New(req->result);
+        argv[1] = Number::New(store_data->offset);
         break;
 
       default:
@@ -106,13 +106,13 @@ static int After(eio_req *req) {
 static int EIO_Seek(eio_req *req) {
   store_data_t* seek_data = static_cast<store_data_t *>(req->data);
 
-  off_t i = lseek(seek_data->fd, seek_data->offset, seek_data->oper);
+  off_t offs = lseek(seek_data->fd, seek_data->offset, seek_data->oper);
 
-  if (i == (off_t)-1) {
+  if (offs == -1) {
     req->result = -1;
     req->errorno = errno;
   } else {
-    req->result = i;
+    seek_data->offset = offs;
   }
 
   return 0;
@@ -215,34 +215,59 @@ static Handle<Value> Flock(const Arguments& args) {
 }
 
 
+#ifdef _LARGEFILE_SOURCE
+static inline int IsInt64(double x) {
+  return x == static_cast<double>(static_cast<int64_t>(x));
+}
+#endif
+
+#ifndef _LARGEFILE_SOURCE
+#define ASSERT_OFFSET(a) \
+  if (!(a)->IsUndefined() && !(a)->IsNull() && !(a)->IsInt32()) { \
+    return ThrowException(Exception::TypeError(String::New("Not an integer"))); \
+  }
+#define GET_OFFSET(a) ((a)->IsNumber() ? (a)->Int32Value() : -1)
+#else
+#define ASSERT_OFFSET(a) \
+  if (!(a)->IsUndefined() && !(a)->IsNull() && !IsInt64((a)->NumberValue())) { \
+    return ThrowException(Exception::TypeError(String::New("Not an integer"))); \
+  }
+#define GET_OFFSET(a) ((a)->IsNumber() ? (a)->IntegerValue() : -1)
+#endif
+
+//  fs.seek(fd, position, whence [, callback] )
+
 static Handle<Value> Seek(const Arguments& args) {
   HandleScope scope;
 
   if (args.Length() < 3 || 
-     !args[0]->IsInt32() || !args[1]->IsInt32() || !args[2]->IsInt32())
-  {
+     !args[0]->IsInt32() || 
+     !args[2]->IsInt32()) {
     return THROW_BAD_ARGS;
+  }
+
+  int fd = args[0]->Int32Value();
+  ASSERT_OFFSET(args[1]);
+  off_t offs = GET_OFFSET(args[1]);
+  int whence = args[2]->Int32Value();
+
+  if ( ! args[3]->IsFunction()) {
+    off_t offs_result = lseek(fd, offs, whence);
+    if (offs_result == -1) return ThrowException(ErrnoException(errno));
+    return scope.Close(Number::New(offs_result));
   }
 
   store_data_t* seek_data = new store_data_t();
 
+  seek_data->cb = cb_persist(args[3]);
   seek_data->fs_op = FS_OP_SEEK;
-  seek_data->fd = args[0]->Int32Value();
-  seek_data->oper = args[2]->Int32Value();
-  seek_data->offset = args[1]->Int32Value();
+  seek_data->fd = fd;
+  seek_data->offset = offs;
+  seek_data->oper = whence;
 
-  if (args[3]->IsFunction()) {
-    seek_data->cb = cb_persist(args[3]);
-    eio_custom(EIO_Seek, EIO_PRI_DEFAULT, After, seek_data);
-    ev_ref(EV_DEFAULT_UC);
-    return Undefined();
-  } else {
-    off_t i = lseek(seek_data->fd, seek_data->offset, seek_data->oper);
-    delete seek_data;
-    if (i == (off_t)-1) return ThrowException(ErrnoException(errno));
-    return scope.Close(Integer::New(i));
-  }
-
+  eio_custom(EIO_Seek, EIO_PRI_DEFAULT, After, seek_data);
+  ev_ref(EV_DEFAULT_UC);
+  return Undefined();
 }
 
 extern "C" void
