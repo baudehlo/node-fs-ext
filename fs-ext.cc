@@ -24,6 +24,9 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <utime.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -41,6 +44,8 @@ struct store_data_t {
   int fd;
   int oper;
   off_t offset;
+  struct utimbuf utime_buf;
+  char *path;
 };
 
 enum
@@ -63,7 +68,7 @@ static int After(eio_req *req) {
   // Allocate space for two args: error plus possible additional result
   Local<Value> argv[2];
 
-  // NOTE: This may be needed to be changed if something returns a -1
+  // NOTE: This may need to be changed if something returns a -1
   // for a success, which is possible.
   if (req->result == -1) {
     // If the request doesn't have a path parameter set.
@@ -75,6 +80,7 @@ static int After(eio_req *req) {
     switch (store_data->fs_op) {
       // These operations have no data to pass other than "error".
       case FS_OP_FLOCK:
+      case FS_OP_UTIME:
         argc = 1;
         break;
 
@@ -270,6 +276,66 @@ static Handle<Value> Seek(const Arguments& args) {
   return Undefined();
 }
 
+
+static int EIO_UTime(eio_req *req) {
+  store_data_t* utime_data = static_cast<store_data_t *>(req->data);
+
+  off_t i = utime(utime_data->path, &utime_data->utime_buf);
+  free( utime_data->path );
+
+  if (i == (off_t)-1) {
+    req->result = -1;
+    req->errorno = errno;
+  } else {
+    req->result = i;
+  }
+  
+  return 0;
+}
+
+// Wrapper for utime(2).
+//   fs.utime( path, atime, mtime, [callback] )
+
+static Handle<Value> UTime(const Arguments& args) {
+  HandleScope scope;
+
+  if (args.Length() < 3 ||
+      args.Length() > 4 ||
+      !args[0]->IsString() ||
+      !args[1]->IsNumber() ||
+      !args[2]->IsNumber() ) {
+    return THROW_BAD_ARGS;
+  }
+
+  String::Utf8Value path(args[0]->ToString());
+  time_t atime = args[1]->IntegerValue();
+  time_t mtime = args[2]->IntegerValue();
+
+  // Synchronous call needs much less work
+  if ( ! args[3]->IsFunction()) {
+    struct utimbuf buf;
+    buf.actime  = atime;
+    buf.modtime = mtime;
+    int ret = utime(*path, &buf);
+    if (ret != 0) return ThrowException(ErrnoException(errno, "utime", "", *path));
+    return Undefined();
+  }
+
+  store_data_t* utime_data = new store_data_t();
+
+  utime_data->cb = cb_persist(args[3]);
+  utime_data->fs_op = FS_OP_UTIME;
+  utime_data->path = strdup(*path);
+  utime_data->utime_buf.actime  = atime;
+  utime_data->utime_buf.modtime = mtime;
+
+  eio_custom(EIO_UTime, EIO_PRI_DEFAULT, After, utime_data);
+  ev_ref(EV_DEFAULT_UC);
+  return Undefined();
+}
+
+
+
 extern "C" void
 init (Handle<Object> target)
 {
@@ -305,4 +371,5 @@ init (Handle<Object> target)
 
   NODE_SET_METHOD(target, "seek", Seek);
   NODE_SET_METHOD(target, "flock", Flock);
+  NODE_SET_METHOD(target, "utime", UTime);
 }
