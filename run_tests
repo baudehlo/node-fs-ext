@@ -4,6 +4,8 @@ node tests/test-fs-seek.js
 
 node tests/test-fs-flock.js
 
+node tests/test-fs-utime.js
+
 # for stress testing only 
 # node tests/test-fs-seek_stress.js
 # node tests/test-fs-flock_stress.js

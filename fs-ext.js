@@ -59,13 +59,13 @@ exports.flock = function(fd, flags, callback) {
   var oper = stringToFlockFlags(flags);
 
   binding.flock(fd, oper, callback);
-}
+};
 
 exports.flockSync = function(fd, flags) {
   var oper = stringToFlockFlags(flags);
 
   return binding.flock(fd, oper);
-}
+};
 
 exports.seek = function(fd, position, whence, callback) {
   callback = arguments[arguments.length - 1];
@@ -74,11 +74,39 @@ exports.seek = function(fd, position, whence, callback) {
   }
 
   binding.seek(fd, position, whence, callback);
-}
+};
 
 exports.seekSync = function(fd, position, whence) {
   return binding.seek(fd, position, whence);
-}
+};
+
+
+// fs.utime('foo' [, atime, mtime] [, func] )
+
+exports.utime = function(path, atime, mtime, callback) {
+  callback = arguments[arguments.length - 1];
+  if (typeof(callback) !== 'function') {
+    callback = noop;
+  }
+
+  if (typeof(atime) !== 'number'  &&  typeof(mtime) !== 'number') {
+    atime = mtime = Date.now() / 1000;
+  }
+
+  binding.utime(path, atime, mtime, callback);
+};
+
+// fs.utimeSync('foo' [, atime, mtime] )
+
+exports.utimeSync = function(path, atime, mtime) {
+
+  if (typeof(atime) !== 'number'  &&  typeof(mtime) !== 'number') {
+    atime = mtime = Date.now() / 1000;
+  }
+
+  return binding.utime(path, atime, mtime);
+};
+
 
 // populate with fs functions from there
 for (var key in fs) {
