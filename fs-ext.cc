@@ -28,6 +28,10 @@
 #include <string.h>
 #include <utime.h>
 
+#ifndef _WIN32
+#include <sys/statvfs.h>
+#endif
+
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -45,14 +49,32 @@ struct store_data_t {
   int oper;
   off_t offset;
   struct utimbuf utime_buf;
+#ifndef _WIN32
+  struct statvfs statvfs_buf;
+#endif
   char *path;
 };
+
+#ifndef _WIN32
+static Persistent<String> f_namemax_symbol;
+static Persistent<String> f_bsize_symbol;
+static Persistent<String> f_frsize_symbol;
+
+static Persistent<String> f_blocks_symbol;
+static Persistent<String> f_bavail_symbol;
+static Persistent<String> f_bfree_symbol;
+
+static Persistent<String> f_files_symbol;
+static Persistent<String> f_favail_symbol;
+static Persistent<String> f_ffree_symbol;
+#endif
 
 enum
 {
   FS_OP_FLOCK,
   FS_OP_SEEK,
-  FS_OP_UTIME
+  FS_OP_UTIME,
+  FS_OP_STATVFS
 };
 
 static int After(eio_req *req) {
@@ -67,7 +89,7 @@ static int After(eio_req *req) {
 
   // Allocate space for two args: error plus possible additional result
   Local<Value> argv[2];
-
+  Local<Object> statvfs_result;
   // NOTE: This may need to be changed if something returns a -1
   // for a success, which is possible.
   if (req->result == -1) {
@@ -88,7 +110,24 @@ static int After(eio_req *req) {
         argc = 2;
         argv[1] = Number::New(store_data->offset);
         break;
-
+      case FS_OP_STATVFS:
+#ifndef _WIN32
+        argc = 2;
+        statvfs_result = Object::New();
+        argv[1] = statvfs_result;
+        statvfs_result->Set(f_namemax_symbol, Integer::New(store_data->statvfs_buf.f_namemax));
+        statvfs_result->Set(f_bsize_symbol, Integer::New(store_data->statvfs_buf.f_bsize));
+        statvfs_result->Set(f_frsize_symbol, Integer::New(store_data->statvfs_buf.f_frsize));
+        statvfs_result->Set(f_blocks_symbol, Integer::New(store_data->statvfs_buf.f_blocks));
+        statvfs_result->Set(f_bavail_symbol, Integer::New(store_data->statvfs_buf.f_bavail));
+        statvfs_result->Set(f_bfree_symbol, Integer::New(store_data->statvfs_buf.f_bfree));
+        statvfs_result->Set(f_files_symbol, Integer::New(store_data->statvfs_buf.f_files));
+        statvfs_result->Set(f_favail_symbol, Integer::New(store_data->statvfs_buf.f_favail));
+        statvfs_result->Set(f_ffree_symbol, Integer::New(store_data->statvfs_buf.f_ffree));
+#else
+        argc = 1;
+#endif
+        break;
       default:
         assert(0 && "Unhandled op type value");
     }
@@ -107,6 +146,20 @@ static int After(eio_req *req) {
   delete store_data;
 
   return 0;
+}
+
+static int EIO_StatVFS(eio_req *req) {
+  store_data_t* statvfs_data = static_cast<store_data_t *>(req->data);
+  req->result = 0;
+#ifndef _WIN32  
+  struct statvfs *data = &(statvfs_data->statvfs_buf);
+  if (statvfs(statvfs_data->path, data)) {
+    req->result = -1;
+  	memset(data, 0, sizeof(struct statvfs));
+  };
+#endif
+  free(statvfs_data->path);	
+  ;
 }
 
 static int EIO_Seek(eio_req *req) {
@@ -334,7 +387,53 @@ static Handle<Value> UTime(const Arguments& args) {
   return Undefined();
 }
 
+// Wrapper for statvfs(2).
+//   fs.statVFS( path, [callback] )
 
+static Handle<Value> StatVFS(const Arguments& args) {
+  HandleScope scope;
+
+  if (args.Length() < 1 ||
+      !args[0]->IsString() ) {
+    return THROW_BAD_ARGS;
+  }
+
+  String::Utf8Value path(args[0]->ToString());
+  
+  // Synchronous call needs much less work
+  if (!args[1]->IsFunction()) {
+#ifndef _WIN32  
+    struct statvfs buf;
+    int ret = statvfs(*path, &buf);
+    if (ret != 0) return ThrowException(ErrnoException(errno, "statvfs", "", *path));
+    Handle<Object> result = Object::New();
+    result->Set(f_namemax_symbol, Integer::New(buf.f_namemax));
+    result->Set(f_bsize_symbol, Integer::New(buf.f_bsize));
+    result->Set(f_frsize_symbol, Integer::New(buf.f_frsize));
+    
+    result->Set(f_blocks_symbol, Integer::New(buf.f_blocks));
+    result->Set(f_bavail_symbol, Integer::New(buf.f_bavail));
+    result->Set(f_bfree_symbol, Integer::New(buf.f_bfree));
+    
+    result->Set(f_files_symbol, Integer::New(buf.f_files));
+    result->Set(f_favail_symbol, Integer::New(buf.f_favail));
+    result->Set(f_ffree_symbol, Integer::New(buf.f_ffree));
+    return result;
+#else
+    return Undefined();
+#endif
+  }
+
+  store_data_t* statvfs_data = new store_data_t();
+
+  statvfs_data->cb = cb_persist(args[1]);
+  statvfs_data->fs_op = FS_OP_STATVFS;
+  statvfs_data->path = strdup(*path);
+
+  eio_custom(EIO_StatVFS, EIO_PRI_DEFAULT, After, statvfs_data);
+  ev_ref(EV_DEFAULT_UC);
+  return Undefined();
+}
 
 extern "C" void
 init (Handle<Object> target)
@@ -372,4 +471,17 @@ init (Handle<Object> target)
   NODE_SET_METHOD(target, "seek", Seek);
   NODE_SET_METHOD(target, "flock", Flock);
   NODE_SET_METHOD(target, "utime", UTime);
+  NODE_SET_METHOD(target, "statVFS", StatVFS);
+  
+  f_namemax_symbol = NODE_PSYMBOL("f_namemax");
+  f_bsize_symbol = NODE_PSYMBOL("f_bsize");
+  f_frsize_symbol = NODE_PSYMBOL("f_frsize");
+  
+  f_blocks_symbol = NODE_PSYMBOL("f_blocks");
+  f_bavail_symbol = NODE_PSYMBOL("f_bavail");
+  f_bfree_symbol = NODE_PSYMBOL("f_bfree");
+  
+  f_files_symbol = NODE_PSYMBOL("f_files");
+  f_favail_symbol = NODE_PSYMBOL("f_favail");
+  f_ffree_symbol = NODE_PSYMBOL("f_ffree");
 }
