@@ -107,6 +107,10 @@ exports.utimeSync = function(path, atime, mtime) {
   return binding.utime(path, atime, mtime);
 };
 
+exports.statVFS = function(path, callback) {
+  path = path || '/';
+  return binding.statVFS(path, callback);
+};
 
 // populate with fs functions from there
 for (var key in fs) {
