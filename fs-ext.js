@@ -17,7 +17,7 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-var binding = require('./build/default/fs-ext');
+var binding = require('./build/Release/fs-ext');
 var fs = require('fs');
 var constants = require('constants');
 
