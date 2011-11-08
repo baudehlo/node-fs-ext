@@ -148,7 +148,7 @@ static int After(eio_req *req) {
   return 0;
 }
 
-static int EIO_StatVFS(eio_req *req) {
+static void EIO_StatVFS(eio_req *req) {
   store_data_t* statvfs_data = static_cast<store_data_t *>(req->data);
   req->result = 0;
 #ifndef _WIN32  
@@ -162,7 +162,7 @@ static int EIO_StatVFS(eio_req *req) {
   ;
 }
 
-static int EIO_Seek(eio_req *req) {
+static void EIO_Seek(eio_req *req) {
   store_data_t* seek_data = static_cast<store_data_t *>(req->data);
 
   off_t offs = lseek(seek_data->fd, seek_data->offset, seek_data->oper);
@@ -174,10 +174,9 @@ static int EIO_Seek(eio_req *req) {
     seek_data->offset = offs;
   }
 
-  return 0;
 }
 
-static int EIO_Flock(eio_req *req) {
+static void EIO_Flock(eio_req *req) {
   store_data_t* flock_data = static_cast<store_data_t *>(req->data);
 
 #ifdef _WIN32
@@ -189,7 +188,6 @@ static int EIO_Flock(eio_req *req) {
   req->result = i;
   req->errorno = errno;
 
-  return 0;
 }
 
 #ifdef _WIN32
@@ -330,7 +328,7 @@ static Handle<Value> Seek(const Arguments& args) {
 }
 
 
-static int EIO_UTime(eio_req *req) {
+static void EIO_UTime(eio_req *req) {
   store_data_t* utime_data = static_cast<store_data_t *>(req->data);
 
   off_t i = utime(utime_data->path, &utime_data->utime_buf);
@@ -343,7 +341,6 @@ static int EIO_UTime(eio_req *req) {
     req->result = i;
   }
   
-  return 0;
 }
 
 // Wrapper for utime(2).
