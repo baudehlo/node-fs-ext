@@ -118,12 +118,12 @@ static int After(eio_req *req) {
         statvfs_result->Set(f_namemax_symbol, Integer::New(store_data->statvfs_buf.f_namemax));
         statvfs_result->Set(f_bsize_symbol, Integer::New(store_data->statvfs_buf.f_bsize));
         statvfs_result->Set(f_frsize_symbol, Integer::New(store_data->statvfs_buf.f_frsize));
-        statvfs_result->Set(f_blocks_symbol, Integer::New(store_data->statvfs_buf.f_blocks));
-        statvfs_result->Set(f_bavail_symbol, Integer::New(store_data->statvfs_buf.f_bavail));
-        statvfs_result->Set(f_bfree_symbol, Integer::New(store_data->statvfs_buf.f_bfree));
-        statvfs_result->Set(f_files_symbol, Integer::New(store_data->statvfs_buf.f_files));
-        statvfs_result->Set(f_favail_symbol, Integer::New(store_data->statvfs_buf.f_favail));
-        statvfs_result->Set(f_ffree_symbol, Integer::New(store_data->statvfs_buf.f_ffree));
+        statvfs_result->Set(f_blocks_symbol, Number::New(store_data->statvfs_buf.f_blocks));
+        statvfs_result->Set(f_bavail_symbol, Number::New(store_data->statvfs_buf.f_bavail));
+        statvfs_result->Set(f_bfree_symbol, Number::New(store_data->statvfs_buf.f_bfree));
+        statvfs_result->Set(f_files_symbol, Number::New(store_data->statvfs_buf.f_files));
+        statvfs_result->Set(f_favail_symbol, Number::New(store_data->statvfs_buf.f_favail));
+        statvfs_result->Set(f_ffree_symbol, Number::New(store_data->statvfs_buf.f_ffree));
 #else
         argc = 1;
 #endif
@@ -408,13 +408,13 @@ static Handle<Value> StatVFS(const Arguments& args) {
     result->Set(f_bsize_symbol, Integer::New(buf.f_bsize));
     result->Set(f_frsize_symbol, Integer::New(buf.f_frsize));
     
-    result->Set(f_blocks_symbol, Integer::New(buf.f_blocks));
-    result->Set(f_bavail_symbol, Integer::New(buf.f_bavail));
-    result->Set(f_bfree_symbol, Integer::New(buf.f_bfree));
+    result->Set(f_blocks_symbol, Number::New(buf.f_blocks));
+    result->Set(f_bavail_symbol, Number::New(buf.f_bavail));
+    result->Set(f_bfree_symbol, Number::New(buf.f_bfree));
     
-    result->Set(f_files_symbol, Integer::New(buf.f_files));
-    result->Set(f_favail_symbol, Integer::New(buf.f_favail));
-    result->Set(f_ffree_symbol, Integer::New(buf.f_ffree));
+    result->Set(f_files_symbol, Number::New(buf.f_files));
+    result->Set(f_favail_symbol, Number::New(buf.f_favail));
+    result->Set(f_ffree_symbol, Number::New(buf.f_ffree));
     return result;
 #else
     return Undefined();
