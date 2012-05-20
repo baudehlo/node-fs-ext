@@ -41,8 +41,6 @@
 //  constants from system library values.
 
 
-// Make this new-built copy of fs-ext available for testing
-require.paths.unshift(__dirname + '/..');
 //  console.log( require.resolve('../fs-ext'));
 
 var assert = require('assert'),
@@ -248,7 +246,7 @@ if ( tests_run !== tests_ok ) {
 
 // Test that constants are published -  -  -  -  -  -  -  - 
 
-var fs_binding = require('../build/default/fs-ext');
+var fs_binding = require('../build/Release/fs-ext');
 
 var constant_names = [ 'SEEK_SET',  'SEEK_CUR',  'SEEK_END' ];
 
