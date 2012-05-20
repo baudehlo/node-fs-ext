@@ -17,8 +17,6 @@
 //TODO and Questions
 
 
-// Make this new-built copy of fs-ext available for testing
-require.paths.unshift(__dirname + '/..');
 //  console.log( require.resolve('../fs-ext'));
 
 var assert = require('assert'),
