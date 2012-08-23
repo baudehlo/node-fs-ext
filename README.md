@@ -1,3 +1,4 @@
+[![build status](https://secure.travis-ci.org/baudehlo/node-fs-ext.png)](http://travis-ci.org/baudehlo/node-fs-ext)
 fs-ext
 ======
 
