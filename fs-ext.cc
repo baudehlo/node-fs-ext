@@ -79,7 +79,7 @@ enum
   FS_OP_STATVFS
 };
 
-static void EIO_After(uv_work_t *req) {
+static void EIO_After(uv_work_t *req, int request) {
   HandleScope scope;
 
   store_data_t *store_data = static_cast<store_data_t *>(req->data);
