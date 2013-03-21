@@ -11,7 +11,7 @@
   },
   "main": "fs-ext.js",
   "engines": {
-    "node": ">= v0.4.0"
+    "node": ">= v0.8.0"
   },
   "dependencies": { },
   "licenses": [ {
@@ -22,6 +22,6 @@
     "web" : "https://github.com/baudehlo/node-fs-ext/issues"
   },
   "scripts": { 
-    "install": "node-waf configure build",
+    "install": "node-gyp configure build",
     "test": "./run_tests" }
 }
