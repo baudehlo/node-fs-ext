@@ -422,18 +422,19 @@ try {
 expect_value('seekSync', err, result, offset_big);
 
 
-tests_run++;
-result = err = undefined;
-offset_big = 16 * 1024 * 1024 * 1024 * 1024;
-// Linux is limited to 43 bits for file position values?
-//console.log('    offset_big   %s    %s', offset_big.toString(), offset_big.toString(16) );
-try {
-  result = fs.seekSync(file_fd, offset_big, 0);
-  //console.log('    result       %s    %s', result.toString(), result.toString(16) );
-} catch (e) {
-  err = e;
-}
-expect_errno('seekSync', err, result, 'EINVAL');
+// This test now works under Node v0.8
+// tests_run++;
+// result = err = undefined;
+// offset_big = 16 * 1024 * 1024 * 1024 * 1024;
+// // Linux is limited to 43 bits for file position values?
+// //console.log('    offset_big   %s    %s', offset_big.toString(), offset_big.toString(16) );
+// try {
+//   result = fs.seekSync(file_fd, offset_big, 0);
+//   //console.log('    result       %s    %s', result.toString(), result.toString(16) );
+// } catch (e) {
+//   err = e;
+// }
+// expect_errno('seekSync', err, result, 'EINVAL');
 
 
 
