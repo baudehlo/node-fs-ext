@@ -494,3 +494,6 @@ init (Handle<Object> target)
   f_favail_symbol = NODE_PSYMBOL("f_favail");
   f_ffree_symbol = NODE_PSYMBOL("f_ffree");
 }
+
+NODE_MODULE(fs_ext, init)
+
