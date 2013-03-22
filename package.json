@@ -11,7 +11,7 @@
   },
   "main": "fs-ext.js",
   "engines": {
-    "node": ">= v0.4.0"
+    "node": ">= v0.8.0"
   },
   "dependencies": { },
   "licenses": [ {

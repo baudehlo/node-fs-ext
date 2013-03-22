@@ -79,7 +79,7 @@ enum
   FS_OP_STATVFS
 };
 
-static void EIO_After(uv_work_t *req, int request) {
+static void EIO_After(uv_work_t *req) {
   HandleScope scope;
 
   store_data_t *store_data = static_cast<store_data_t *>(req->data);
@@ -259,7 +259,7 @@ static Handle<Value> Flock(const Arguments& args) {
     flock_data->cb = cb_persist(args[2]);
     uv_work_t *req = new uv_work_t;
     req->data = flock_data;
-    uv_queue_work(uv_default_loop(), req, EIO_Flock, EIO_After);
+    uv_queue_work(uv_default_loop(), req, EIO_Flock, (uv_after_work_cb)EIO_After);
     uv_ref((uv_handle_t*) &req);
     return Undefined();
   } else {
@@ -327,7 +327,7 @@ static Handle<Value> Seek(const Arguments& args) {
 
   uv_work_t *req = new uv_work_t;
   req->data = seek_data;
-  uv_queue_work(uv_default_loop(), req, EIO_Seek, EIO_After);
+  uv_queue_work(uv_default_loop(), req, EIO_Seek, (uv_after_work_cb)EIO_After);
   uv_ref((uv_handle_t*) &req);
 
   return Undefined();
@@ -387,7 +387,7 @@ static Handle<Value> UTime(const Arguments& args) {
 
   uv_work_t *req = new uv_work_t;
   req->data = utime_data;
-  uv_queue_work(uv_default_loop(), req, EIO_UTime, EIO_After);
+  uv_queue_work(uv_default_loop(), req, EIO_UTime, (uv_after_work_cb)EIO_After);
   uv_ref((uv_handle_t*) &req);
 
   return Undefined();
@@ -438,7 +438,7 @@ static Handle<Value> StatVFS(const Arguments& args) {
 
   uv_work_t *req = new uv_work_t;
   req->data = statvfs_data;
-  uv_queue_work(uv_default_loop(), req, EIO_StatVFS, EIO_After);
+  uv_queue_work(uv_default_loop(), req, EIO_StatVFS,(uv_after_work_cb)EIO_After);
   uv_ref((uv_handle_t*) &req);
 
   return Undefined();
@@ -495,5 +495,6 @@ init (Handle<Object> target)
   f_ffree_symbol = NODE_PSYMBOL("f_ffree");
 }
 
-NODE_MODULE(fs_ext, init)
-
+#if NODE_MODULE_VERSION > 1
+  NODE_MODULE(fs_ext, init)
+#endif
