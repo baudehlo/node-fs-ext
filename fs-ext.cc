@@ -131,8 +131,6 @@ static void EIO_After(uv_work_t *req) {
       default:
         assert(0 && "Unhandled op type value");
     }
-
-    delete req;
   }
 
   TryCatch try_catch;
@@ -146,6 +144,7 @@ static void EIO_After(uv_work_t *req) {
   // Dispose of the persistent handle
   cb_destroy(store_data->cb);
   delete store_data;
+  delete req;
 }
 
 static void EIO_StatVFS(uv_work_t *req) {
