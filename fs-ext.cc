@@ -20,20 +20,22 @@
 #include <node.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <sys/file.h>
 #include <stdio.h>
 #include <sys/types.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <utime.h>
 
 #ifndef _WIN32
+#include <sys/file.h>
+#include <unistd.h>
+#include <utime.h>
 #include <sys/statvfs.h>
 #endif
 
 #ifdef _WIN32
+#include <io.h>
 #include <windows.h>
+#include <sys/utime.h>
 #endif
 
 using namespace v8;
@@ -69,6 +71,13 @@ static Persistent<String> f_bfree_symbol;
 static Persistent<String> f_files_symbol;
 static Persistent<String> f_favail_symbol;
 static Persistent<String> f_ffree_symbol;
+#endif
+
+#ifdef _WIN32
+  const int LOCK_SH=1;
+  const int LOCK_EX=2;
+  const int LOCK_NB=4;
+  const int LOCK_UN=8;
 #endif
 
 enum
@@ -175,20 +184,6 @@ static void EIO_Seek(uv_work_t *req) {
 
 }
 
-static void EIO_Flock(uv_work_t *req) {
-  store_data_t* flock_data = static_cast<store_data_t *>(req->data);
-
-#ifdef _WIN32
-  int i = _win32_flock(flock_data->fd, flock_data->oper);
-#else
-  int i = flock(flock_data->fd, flock_data->oper);
-#endif
-  
-  flock_data->result = i;
-  flock_data->error = errno;
-
-}
-
 #ifdef _WIN32
 #define LK_LEN          0xffff0000
 
@@ -200,7 +195,7 @@ static int _win32_flock(int fd, int oper) {
 
   fh = (HANDLE)_get_osfhandle(fd);
   if (fh == (HANDLE)-1)
-    return ThrowException(ErrnoException(errno));
+    return -1;
   
   memset(&o, 0, sizeof(o));
 
@@ -239,6 +234,20 @@ static int _win32_flock(int fd, int oper) {
   return i;
 }
 #endif
+
+static void EIO_Flock(uv_work_t *req) {
+  store_data_t* flock_data = static_cast<store_data_t *>(req->data);
+
+#ifdef _WIN32
+  int i = _win32_flock(flock_data->fd, flock_data->oper);
+#else
+  int i = flock(flock_data->fd, flock_data->oper);
+#endif
+  
+  flock_data->result = i;
+  flock_data->error = errno;
+
+}
 
 static Handle<Value> Flock(const Arguments& args) {
   HandleScope scope;
@@ -475,7 +484,7 @@ init (Handle<Object> target)
   NODE_SET_METHOD(target, "flock", Flock);
   NODE_SET_METHOD(target, "utime", UTime);
   NODE_SET_METHOD(target, "statVFS", StatVFS);
-  
+#ifndef _WIN32
   f_namemax_symbol = NODE_PSYMBOL("f_namemax");
   f_bsize_symbol = NODE_PSYMBOL("f_bsize");
   f_frsize_symbol = NODE_PSYMBOL("f_frsize");
@@ -487,6 +496,7 @@ init (Handle<Object> target)
   f_files_symbol = NODE_PSYMBOL("f_files");
   f_favail_symbol = NODE_PSYMBOL("f_favail");
   f_ffree_symbol = NODE_PSYMBOL("f_ffree");
+#endif
 }
 
 #if NODE_MODULE_VERSION > 1
