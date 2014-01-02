@@ -38,6 +38,8 @@
 #include <sys/utime.h>
 #endif
 
+#include "fs-win.h"
+
 using namespace v8;
 using namespace node;
 
@@ -496,6 +498,10 @@ init (Handle<Object> target)
   f_files_symbol = NODE_PSYMBOL("f_files");
   f_favail_symbol = NODE_PSYMBOL("f_favail");
   f_ffree_symbol = NODE_PSYMBOL("f_ffree");
+#endif
+
+#ifdef _WIN32
+  fs_win::init(target);
 #endif
 }
 
