@@ -6,7 +6,7 @@ var assert = require("assert"),
     tmp_dir = process.env.TMP || process.env.TEMP || "/tmp",
     file_path = path.join(tmp_dir, "fs-ext_chown.test"),
     // use the current process user or Administrator on Windows
-    uid = process.getuid && process.getuid() || "S-1-5-32-500",
+    uid = process.getuid ? process.getuid() : "S-1-5-32-500",
     // use the "nobody" user or the Users group on Windows
     other_uid = process.platform.match(/^win/i) ? "S-1-5-32-513" : 65534,
     fd;
