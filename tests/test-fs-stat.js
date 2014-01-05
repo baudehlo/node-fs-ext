@@ -3,7 +3,7 @@
 var assert = require("assert"),
     path = require("path"),
     fs = require("../fs-ext"),
-    tmp_dir = "/tmp",
+    tmp_dir = process.env.TMP || process.env.TEMP || "/tmp",
     file_path = path.join(tmp_dir, "fs-ext_stat.test"),
     fd, stats;
 

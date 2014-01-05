@@ -337,6 +337,7 @@ var fsExt = process.platform.match(/^win/i) ?
 
         }());
 
+    return fsExt;
   }())
   :
   // the implementation doesn't need the native add-on on POSIX
@@ -345,7 +346,7 @@ var fsExt = process.platform.match(/^win/i) ?
 // populate with fs functions from there
 merge(exports, fs);
 
-// replace the functoins enhanced on Windows
+// replace the functions enhanced on Windows
 merge(exports, fsExt);
 
 // put constants into constants module (don't like doing this but...)
