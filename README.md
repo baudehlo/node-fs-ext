@@ -17,14 +17,18 @@ Usage
 fs-ext imports all of the methods from the core 'fs' module, so you don't
 need two objects.
 
-    var fs = require('fs-ext');
-    var fd = fs.openSync('foo.txt', 'r');
-    fs.flock(fd, 'ex', function (err) {
-        if (err) {
-            return console.log("Couldn't lock file");
-        }
-        // file is locked
-    })
+```js
+var fs = require('fs-ext');
+var fd = fs.openSync('foo.txt', 'r');
+fs.flock(fd, 'ex', function (err) {
+    if (err) {
+        return console.log("Couldn't lock file");
+    }
+    // file is locked
+})
+```
+
+For an advanced example checkout `example.js`.
 
 API
 ---
