@@ -48,6 +48,24 @@ function stringToFlockFlags(flag) {
   }
 }
 
+// used by Fcntl
+function stringToFcntlFlags(flag) {
+  if (typeof flag !== 'string') {
+    return flag;
+  }
+
+  switch (flag) {
+    case 'getfd':
+      return binding.F_GETFD;
+    
+    case 'setfd':
+      return binding.F_SETFD;
+    
+    default:
+      throw new Error('Unknown fcntl flag: ' + flag);
+  }
+}
+
 function noop() {}
 
 exports.flock = function(fd, flags, callback) {
@@ -65,6 +83,22 @@ exports.flockSync = function(fd, flags) {
   var oper = stringToFlockFlags(flags);
 
   return binding.flock(fd, oper);
+};
+
+exports.fcntl = function(fd, cmd, arg, callback) {
+  cmd = stringToFcntlFlags(cmd);
+  if (arguments.length < 4) {
+    callback = arg;
+    arg = 0;
+  }
+  if(!arg) arg = 0;
+  return binding.fcntl(fd, cmd, arg, callback);
+};
+
+exports.fcntlSync = function(fd, cmd, arg) {
+  cmd = stringToFcntlFlags(cmd);
+  if (!arg) arg = 0;
+  return binding.fcntl(fd, cmd, arg);
 };
 
 exports.seek = function(fd, position, whence, callback) {
