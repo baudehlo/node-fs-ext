@@ -51,6 +51,7 @@ struct store_data_t {
   int fs_op;  // operation type within this module
   int fd;
   int oper;
+  int arg;
   off_t offset;
   struct utimbuf utime_buf;
 #ifndef _WIN32
@@ -87,7 +88,8 @@ enum
   FS_OP_FLOCK,
   FS_OP_SEEK,
   FS_OP_UTIME,
-  FS_OP_STATVFS
+  FS_OP_STATVFS,
+  FS_OP_FCNTL,
 };
 
 static void EIO_After(uv_work_t *req) {
@@ -139,6 +141,10 @@ static void EIO_After(uv_work_t *req) {
         argc = 1;
 #endif
         break;
+      case FS_OP_FCNTL:
+        argc = 2;
+        argv[1] = NanNew<Number>(store_data->result);
+        break;
       default:
         assert(0 && "Unhandled op type value");
     }
@@ -184,6 +190,14 @@ static void EIO_Seek(uv_work_t *req) {
     seek_data->offset = offs;
   }
 
+}
+
+static void EIO_Fcntl(uv_work_t *req) {
+  store_data_t* data = static_cast<store_data_t *>(req->data);
+  int result = data->result = fcntl(data->fd, data->oper, data->arg);
+  if (result == -1) {
+    data->error = errno;
+  }
 }
 
 #ifdef _WIN32
@@ -347,6 +361,43 @@ static NAN_METHOD(Seek) {
   NanReturnUndefined();
 }
 
+//  fs.fcntl(fd, cmd, [arg])
+
+static NAN_METHOD(Fcntl) {
+  NanScope();
+
+  if (args.Length() < 3 ||
+     !args[0]->IsInt32() ||
+     !args[1]->IsInt32() ||
+     !args[2]->IsInt32()) {
+    return THROW_BAD_ARGS;
+  }
+
+  int fd = args[0]->Int32Value();
+  int cmd = args[1]->Int32Value();
+  int arg = args[2]->Int32Value();
+
+  if ( ! args[3]->IsFunction()) {
+    int result = fcntl(fd, cmd, arg);
+    if (result == -1) return ThrowException(ErrnoException(errno));
+    NanReturnValue(NanNew<Number>(result));
+  }
+
+  store_data_t* data = new store_data_t();
+
+  data->cb = new NanCallback((Local<Function>) args[3].As<Function>());
+  data->fs_op = FS_OP_FCNTL;
+  data->fd = fd;
+  data->oper = cmd;
+  data->arg = arg;
+
+  uv_work_t *req = new uv_work_t;
+  req->data = data;
+  uv_queue_work(uv_default_loop(), req, EIO_Fcntl, (uv_after_work_cb)EIO_After);
+
+  NanReturnUndefined();
+}
+
 
 static void EIO_UTime(uv_work_t *req) {
   store_data_t* utime_data = static_cast<store_data_t *>(req->data);
@@ -493,7 +544,20 @@ init (Handle<Object> target)
   NODE_DEFINE_CONSTANT(target, LOCK_UN);
 #endif
 
+#ifdef F_GETFD
+  NODE_DEFINE_CONSTANT(target, F_GETFD);
+#endif
+
+#ifdef F_SETFD
+  NODE_DEFINE_CONSTANT(target, F_SETFD);
+#endif
+
+#ifdef FD_CLOEXEC
+  NODE_DEFINE_CONSTANT(target, FD_CLOEXEC);
+#endif
+
   NODE_SET_METHOD(target, "seek", Seek);
+  NODE_SET_METHOD(target, "fcntl", Fcntl);
   NODE_SET_METHOD(target, "flock", Flock);
   NODE_SET_METHOD(target, "utime", UTime);
   NODE_SET_METHOD(target, "statVFS", StatVFS);
