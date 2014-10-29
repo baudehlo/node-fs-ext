@@ -185,6 +185,13 @@ static void EIO_Seek(uv_work_t *req) {
 }
 
 #ifdef _WIN32
+
+static void uv__crt_invalid_parameter_handler(const wchar_t* expression,
+    const wchar_t* function, const wchar_t * file, unsigned int line,
+    uintptr_t reserved) {
+  /* No-op. */
+}
+
 #define LK_LEN          0xffff0000
 
 static int _win32_flock(int fd, int oper) {
@@ -451,6 +458,10 @@ extern "C" void
 init (Handle<Object> target)
 {
   HandleScope scope;
+
+#ifdef _WIN32
+  _set_invalid_parameter_handler(uv__crt_invalid_parameter_handler);
+#endif
 
 #ifdef SEEK_SET
   NODE_DEFINE_CONSTANT(target, SEEK_SET);
