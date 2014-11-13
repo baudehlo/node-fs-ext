@@ -24,6 +24,7 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <string.h>
+#include <nan.h>
 
 #ifndef _WIN32
 #include <sys/file.h>
@@ -43,11 +44,10 @@
 using namespace v8;
 using namespace node;
 
-#define THROW_BAD_ARGS \
-  ThrowException(Exception::TypeError(String::New("Bad argument")))
+#define THROW_BAD_ARGS NanThrowTypeError("Bad argument")
 
 struct store_data_t {
-  Persistent<Function> *cb;
+  NanCallback *cb;
   int fs_op;  // operation type within this module
   int fd;
   int oper;
@@ -91,7 +91,7 @@ enum
 };
 
 static void EIO_After(uv_work_t *req) {
-  HandleScope scope;
+  NanScope();
 
   store_data_t *store_data = static_cast<store_data_t *>(req->data);
 
@@ -108,7 +108,7 @@ static void EIO_After(uv_work_t *req) {
     argv[0] = ErrnoException(store_data->error);
   } else {
     // error value is empty or null for non-error.
-    argv[0] = Local<Value>::New(Null());
+    argv[0] = NanNull();
 
     switch (store_data->fs_op) {
       // These operations have no data to pass other than "error".
@@ -119,22 +119,22 @@ static void EIO_After(uv_work_t *req) {
 
       case FS_OP_SEEK:
         argc = 2;
-        argv[1] = Number::New(store_data->offset);
+        argv[1] = NanNew<Number>(store_data->offset);
         break;
       case FS_OP_STATVFS:
 #ifndef _WIN32
         argc = 2;
-        statvfs_result = Object::New();
+        statvfs_result = NanNew<Object>();
         argv[1] = statvfs_result;
-        statvfs_result->Set(f_namemax_symbol, Integer::New(store_data->statvfs_buf.f_namemax));
-        statvfs_result->Set(f_bsize_symbol, Integer::New(store_data->statvfs_buf.f_bsize));
-        statvfs_result->Set(f_frsize_symbol, Integer::New(store_data->statvfs_buf.f_frsize));
-        statvfs_result->Set(f_blocks_symbol, Number::New(store_data->statvfs_buf.f_blocks));
-        statvfs_result->Set(f_bavail_symbol, Number::New(store_data->statvfs_buf.f_bavail));
-        statvfs_result->Set(f_bfree_symbol, Number::New(store_data->statvfs_buf.f_bfree));
-        statvfs_result->Set(f_files_symbol, Number::New(store_data->statvfs_buf.f_files));
-        statvfs_result->Set(f_favail_symbol, Number::New(store_data->statvfs_buf.f_favail));
-        statvfs_result->Set(f_ffree_symbol, Number::New(store_data->statvfs_buf.f_ffree));
+        statvfs_result->Set(NanNew<String>(f_namemax_symbol), NanNew<Integer>(store_data->statvfs_buf.f_namemax));
+        statvfs_result->Set(NanNew<String>(f_bsize_symbol), NanNew<Integer>(store_data->statvfs_buf.f_bsize));
+        statvfs_result->Set(NanNew<String>(f_frsize_symbol), NanNew<Integer>(store_data->statvfs_buf.f_frsize));
+        statvfs_result->Set(NanNew<String>(f_blocks_symbol), NanNew<Number>(store_data->statvfs_buf.f_blocks));
+        statvfs_result->Set(NanNew<String>(f_bavail_symbol), NanNew<Number>(store_data->statvfs_buf.f_bavail));
+        statvfs_result->Set(NanNew<String>(f_bfree_symbol), NanNew<Number>(store_data->statvfs_buf.f_bfree));
+        statvfs_result->Set(NanNew<String>(f_files_symbol), NanNew<Number>(store_data->statvfs_buf.f_files));
+        statvfs_result->Set(NanNew<String>(f_favail_symbol), NanNew<Number>(store_data->statvfs_buf.f_favail));
+        statvfs_result->Set(NanNew<String>(f_ffree_symbol), NanNew<Number>(store_data->statvfs_buf.f_ffree));
 #else
         argc = 1;
 #endif
@@ -146,14 +146,14 @@ static void EIO_After(uv_work_t *req) {
 
   TryCatch try_catch;
 
-  (*(store_data->cb))->Call(v8::Context::GetCurrent()->Global(), argc, argv);
+  store_data->cb->Call(argc, argv);
 
   if (try_catch.HasCaught()) {
     FatalException(try_catch);
   }
 
   // Dispose of the persistent handle
-  cb_destroy(store_data->cb);
+  delete store_data->cb;
   delete store_data;
   delete req;
 }
@@ -258,8 +258,8 @@ static void EIO_Flock(uv_work_t *req) {
 
 }
 
-static Handle<Value> Flock(const Arguments& args) {
-  HandleScope scope;
+static NAN_METHOD(Flock) {
+  NanScope();
 
   if (args.Length() < 2 || !args[0]->IsInt32() || !args[1]->IsInt32()) {
     return THROW_BAD_ARGS;
@@ -272,11 +272,11 @@ static Handle<Value> Flock(const Arguments& args) {
   flock_data->oper = args[1]->Int32Value();
 
   if (args[2]->IsFunction()) {
-    flock_data->cb = cb_persist(args[2]);
+    flock_data->cb = new NanCallback((Local<Function>) args[2].As<Function>());
     uv_work_t *req = new uv_work_t;
     req->data = flock_data;
     uv_queue_work(uv_default_loop(), req, EIO_Flock, (uv_after_work_cb)EIO_After);
-    return Undefined();
+    NanReturnUndefined();
   } else {
 #ifdef _WIN32
     int i = _win32_flock(flock_data->fd, flock_data->oper);
@@ -284,8 +284,8 @@ static Handle<Value> Flock(const Arguments& args) {
     int i = flock(flock_data->fd, flock_data->oper);
 #endif
     delete flock_data;
-    if (i != 0) return ThrowException(ErrnoException(errno));
-    return Undefined();
+    if (i != 0) return NanThrowError(ErrnoException(errno));
+    NanReturnUndefined();
   }
 }
 
@@ -299,21 +299,21 @@ static inline int IsInt64(double x) {
 #ifndef _LARGEFILE_SOURCE
 #define ASSERT_OFFSET(a) \
   if (!(a)->IsUndefined() && !(a)->IsNull() && !(a)->IsInt32()) { \
-    return ThrowException(Exception::TypeError(String::New("Not an integer"))); \
+    return NanThrowTypeError("Not an integer"); \
   }
 #define GET_OFFSET(a) ((a)->IsNumber() ? (a)->Int32Value() : -1)
 #else
 #define ASSERT_OFFSET(a) \
   if (!(a)->IsUndefined() && !(a)->IsNull() && !IsInt64((a)->NumberValue())) { \
-    return ThrowException(Exception::TypeError(String::New("Not an integer"))); \
+    return NanThrowTypeError("Not an integer"); \
   }
 #define GET_OFFSET(a) ((a)->IsNumber() ? (a)->IntegerValue() : -1)
 #endif
 
 //  fs.seek(fd, position, whence [, callback] )
 
-static Handle<Value> Seek(const Arguments& args) {
-  HandleScope scope;
+static NAN_METHOD(Seek) {
+  NanScope();
 
   if (args.Length() < 3 || 
      !args[0]->IsInt32() || 
@@ -328,13 +328,13 @@ static Handle<Value> Seek(const Arguments& args) {
 
   if ( ! args[3]->IsFunction()) {
     off_t offs_result = lseek(fd, offs, whence);
-    if (offs_result == -1) return ThrowException(ErrnoException(errno));
-    return scope.Close(Number::New(offs_result));
+    if (offs_result == -1) return NanThrowError(ErrnoException(errno));
+    NanReturnValue(NanNew<Number>(offs_result));
   }
 
   store_data_t* seek_data = new store_data_t();
 
-  seek_data->cb = cb_persist(args[3]);
+  seek_data->cb = new NanCallback((Local<Function>) args[3].As<Function>());
   seek_data->fs_op = FS_OP_SEEK;
   seek_data->fd = fd;
   seek_data->offset = offs;
@@ -344,7 +344,7 @@ static Handle<Value> Seek(const Arguments& args) {
   req->data = seek_data;
   uv_queue_work(uv_default_loop(), req, EIO_Seek, (uv_after_work_cb)EIO_After);
 
-  return Undefined();
+  NanReturnUndefined();
 }
 
 
@@ -366,8 +366,8 @@ static void EIO_UTime(uv_work_t *req) {
 // Wrapper for utime(2).
 //   fs.utime( path, atime, mtime, [callback] )
 
-static Handle<Value> UTime(const Arguments& args) {
-  HandleScope scope;
+static NAN_METHOD(UTime) {
+  NanScope();
 
   if (args.Length() < 3 ||
       args.Length() > 4 ||
@@ -387,13 +387,13 @@ static Handle<Value> UTime(const Arguments& args) {
     buf.actime  = atime;
     buf.modtime = mtime;
     int ret = utime(*path, &buf);
-    if (ret != 0) return ThrowException(ErrnoException(errno, "utime", "", *path));
-    return Undefined();
+    if (ret != 0) return NanThrowError(ErrnoException(errno, "utime", "", *path));
+    NanReturnUndefined();
   }
 
   store_data_t* utime_data = new store_data_t();
 
-  utime_data->cb = cb_persist(args[3]);
+  utime_data->cb = new NanCallback((Local<Function>) args[3].As<Function>());
   utime_data->fs_op = FS_OP_UTIME;
   utime_data->path = strdup(*path);
   utime_data->utime_buf.actime  = atime;
@@ -403,14 +403,14 @@ static Handle<Value> UTime(const Arguments& args) {
   req->data = utime_data;
   uv_queue_work(uv_default_loop(), req, EIO_UTime, (uv_after_work_cb)EIO_After);
 
-  return Undefined();
+  NanReturnUndefined();
 }
 
 // Wrapper for statvfs(2).
 //   fs.statVFS( path, [callback] )
 
-static Handle<Value> StatVFS(const Arguments& args) {
-  HandleScope scope;
+static NAN_METHOD(StatVFS) {
+  NanScope();
 
   if (args.Length() < 1 ||
       !args[0]->IsString() ) {
@@ -424,28 +424,28 @@ static Handle<Value> StatVFS(const Arguments& args) {
 #ifndef _WIN32  
     struct statvfs buf;
     int ret = statvfs(*path, &buf);
-    if (ret != 0) return ThrowException(ErrnoException(errno, "statvfs", "", *path));
-    Handle<Object> result = Object::New();
-    result->Set(f_namemax_symbol, Integer::New(buf.f_namemax));
-    result->Set(f_bsize_symbol, Integer::New(buf.f_bsize));
-    result->Set(f_frsize_symbol, Integer::New(buf.f_frsize));
+    if (ret != 0) return NanThrowError(ErrnoException(errno, "statvfs", "", *path));
+    Handle<Object> result = NanNew<Object>();
+    result->Set(NanNew<String>(f_namemax_symbol), NanNew<Integer>(buf.f_namemax));
+    result->Set(NanNew<String>(f_bsize_symbol), NanNew<Integer>(buf.f_bsize));
+    result->Set(NanNew<String>(f_frsize_symbol), NanNew<Integer>(buf.f_frsize));
     
-    result->Set(f_blocks_symbol, Number::New(buf.f_blocks));
-    result->Set(f_bavail_symbol, Number::New(buf.f_bavail));
-    result->Set(f_bfree_symbol, Number::New(buf.f_bfree));
+    result->Set(NanNew<String>(f_blocks_symbol), NanNew<Number>(buf.f_blocks));
+    result->Set(NanNew<String>(f_bavail_symbol), NanNew<Number>(buf.f_bavail));
+    result->Set(NanNew<String>(f_bfree_symbol), NanNew<Number>(buf.f_bfree));
     
-    result->Set(f_files_symbol, Number::New(buf.f_files));
-    result->Set(f_favail_symbol, Number::New(buf.f_favail));
-    result->Set(f_ffree_symbol, Number::New(buf.f_ffree));
-    return result;
+    result->Set(NanNew<String>(f_files_symbol), NanNew<Number>(buf.f_files));
+    result->Set(NanNew<String>(f_favail_symbol), NanNew<Number>(buf.f_favail));
+    result->Set(NanNew<String>(f_ffree_symbol), NanNew<Number>(buf.f_ffree));
+    NanReturnValue(result);
 #else
-    return Undefined();
+    NanReturnUndefined();
 #endif
   }
 
   store_data_t* statvfs_data = new store_data_t();
 
-  statvfs_data->cb = cb_persist(args[1]);
+  statvfs_data->cb = new NanCallback((Local<Function>) args[1].As<Function>());
   statvfs_data->fs_op = FS_OP_STATVFS;
   statvfs_data->path = strdup(*path);
 
@@ -453,13 +453,13 @@ static Handle<Value> StatVFS(const Arguments& args) {
   req->data = statvfs_data;
   uv_queue_work(uv_default_loop(), req, EIO_StatVFS,(uv_after_work_cb)EIO_After);
 
-  return Undefined();
+  NanReturnUndefined();
 }
 
 extern "C" void
 init (Handle<Object> target)
 {
-  HandleScope scope;
+  NanScope();
 
 #ifdef _WIN32
   _set_invalid_parameter_handler(uv__crt_invalid_parameter_handler);
@@ -498,17 +498,17 @@ init (Handle<Object> target)
   NODE_SET_METHOD(target, "utime", UTime);
   NODE_SET_METHOD(target, "statVFS", StatVFS);
 #ifndef _WIN32
-  f_namemax_symbol = NODE_PSYMBOL("f_namemax");
-  f_bsize_symbol = NODE_PSYMBOL("f_bsize");
-  f_frsize_symbol = NODE_PSYMBOL("f_frsize");
+  NanAssignPersistent(f_namemax_symbol, NanNew<String>("f_namemax"));
+  NanAssignPersistent(f_bsize_symbol, NanNew<String>("f_bsize"));
+  NanAssignPersistent(f_frsize_symbol, NanNew<String>("f_frsize"));
   
-  f_blocks_symbol = NODE_PSYMBOL("f_blocks");
-  f_bavail_symbol = NODE_PSYMBOL("f_bavail");
-  f_bfree_symbol = NODE_PSYMBOL("f_bfree");
+  NanAssignPersistent(f_blocks_symbol, NanNew<String>("f_blocks"));
+  NanAssignPersistent(f_bavail_symbol, NanNew<String>("f_bavail"));
+  NanAssignPersistent(f_bfree_symbol, NanNew<String>("f_bfree"));
   
-  f_files_symbol = NODE_PSYMBOL("f_files");
-  f_favail_symbol = NODE_PSYMBOL("f_favail");
-  f_ffree_symbol = NODE_PSYMBOL("f_ffree");
+  NanAssignPersistent(f_files_symbol, NanNew<String>("f_files"));
+  NanAssignPersistent(f_favail_symbol, NanNew<String>("f_favail"));
+  NanAssignPersistent(f_ffree_symbol, NanNew<String>("f_ffree"));
 #endif
 
 #ifdef _WIN32
