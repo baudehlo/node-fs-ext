@@ -42,6 +42,23 @@ to the various LOCK_SH, LOCK_EX, LOCK_SH|LOCK_NB, etc.
 
 Synchronous flock(2). Throws an exception on error.
 
+### fs.fcntl(fd, cmd, [arg], [callback])
+
+Asynchronous fcntl(2).
+
+callback will be given two arguments (err, result).
+
+The supported commands are:
+
+- 'getfd' ( F_GETFD )
+- 'setfd' ( F_SETFD )
+
+Requiring this module adds `FD_CLOEXEC` to the constants module, for use with F_SETFD.
+
+### fs.fcntlSync(fd, flags)
+
+Synchronous fcntl(2). Throws an exception on error.
+
 ### fs.seek(fd, offset, whence, [callback])
 
 Asynchronous lseek(2).  
