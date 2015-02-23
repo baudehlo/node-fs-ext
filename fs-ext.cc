@@ -128,9 +128,9 @@ static void EIO_After(uv_work_t *req) {
         argc = 2;
         statvfs_result = NanNew<Object>();
         argv[1] = statvfs_result;
-        statvfs_result->Set(NanNew<String>(f_namemax_symbol), NanNew<Integer>(store_data->statvfs_buf.f_namemax));
-        statvfs_result->Set(NanNew<String>(f_bsize_symbol), NanNew<Integer>(store_data->statvfs_buf.f_bsize));
-        statvfs_result->Set(NanNew<String>(f_frsize_symbol), NanNew<Integer>(store_data->statvfs_buf.f_frsize));
+        statvfs_result->Set(NanNew<String>(f_namemax_symbol), NanNew<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_namemax)));
+        statvfs_result->Set(NanNew<String>(f_bsize_symbol), NanNew<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_bsize)));
+        statvfs_result->Set(NanNew<String>(f_frsize_symbol), NanNew<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_frsize)));
         statvfs_result->Set(NanNew<String>(f_blocks_symbol), NanNew<Number>(store_data->statvfs_buf.f_blocks));
         statvfs_result->Set(NanNew<String>(f_bavail_symbol), NanNew<Number>(store_data->statvfs_buf.f_bavail));
         statvfs_result->Set(NanNew<String>(f_bfree_symbol), NanNew<Number>(store_data->statvfs_buf.f_bfree));
@@ -477,9 +477,9 @@ static NAN_METHOD(StatVFS) {
     int ret = statvfs(*path, &buf);
     if (ret != 0) return NanThrowError(ErrnoException(errno, "statvfs", "", *path));
     Handle<Object> result = NanNew<Object>();
-    result->Set(NanNew<String>(f_namemax_symbol), NanNew<Integer>(buf.f_namemax));
-    result->Set(NanNew<String>(f_bsize_symbol), NanNew<Integer>(buf.f_bsize));
-    result->Set(NanNew<String>(f_frsize_symbol), NanNew<Integer>(buf.f_frsize));
+    result->Set(NanNew<String>(f_namemax_symbol), NanNew<Integer>(static_cast<uint32_t>(buf.f_namemax)));
+    result->Set(NanNew<String>(f_bsize_symbol), NanNew<Integer>(static_cast<uint32_t>(buf.f_bsize)));
+    result->Set(NanNew<String>(f_frsize_symbol), NanNew<Integer>(static_cast<uint32_t>(buf.f_frsize)));
     
     result->Set(NanNew<String>(f_blocks_symbol), NanNew<Number>(buf.f_blocks));
     result->Set(NanNew<String>(f_bavail_symbol), NanNew<Number>(buf.f_bavail));
