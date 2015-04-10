@@ -66,9 +66,10 @@ and also F_RDLCK, F_WRLCK and F_UNLCK for use with F_SETLK (etc).
 
 File locking can be used like so:
 
-	fs.fcntl(fd, 'setlkw', constants.F_WRLCK, function(err, result)
-	{ 
-		
+	fs.fcntl(fd, 'setlkw', constants.F_WRLCK, function(err, result) { 
+		if (result!=null) {
+			//Lock succeeded
+		}
 	});
 
 ### fs.fcntlSync(fd, flags)
