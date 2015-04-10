@@ -38,6 +38,11 @@ Asynchronous flock(2). No arguments other than a possible error are passed to
 the callback. Flags can be 'sh', 'ex', 'shnb', 'exnb', 'un' and correspond
 to the various LOCK_SH, LOCK_EX, LOCK_SH|LOCK_NB, etc.
 
+NOTE (from flock() man page): flock() does not lock files over NFS. Use fcntl(2)
+instead: that does work over NFS, given a sufficiently recent version of Linux
+and a server which supports locking.
+
+
 ### fs.flockSync(fd, flags)
 
 Synchronous flock(2). Throws an exception on error.
