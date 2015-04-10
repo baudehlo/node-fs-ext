@@ -206,14 +206,12 @@ static void EIO_Fcntl(uv_work_t *req) {
 		lk.l_whence = SEEK_SET;
 		lk.l_type   = data->arg;
 	}
-	result = fcntl(data->fd, data->oper, &lk);
+	data->result = result = fcntl(data->fd, data->oper, &lk); 
   } else {
-  	result = fcntl(data->fd, data->oper, data->arg);
+  	data->result = result = fcntl(data->fd, data->oper, data->arg);
   }
   if (result == -1) {
    	data->error = errno;
-  } else {
-	data->result = result;  
   }
 }
 
