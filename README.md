@@ -52,8 +52,19 @@ The supported commands are:
 
 - 'getfd' ( F_GETFD )
 - 'setfd' ( F_SETFD )
+- 'setlk' ( F_SETLK )
+- 'getlk' ( F_GETLK )
+- 'setlkw' ( F_SETLKW )
 
-Requiring this module adds `FD_CLOEXEC` to the constants module, for use with F_SETFD.
+Requiring this module adds `FD_CLOEXEC` to the constants module, for use with F_SETFD,
+and also F_RDLCK, F_WRLCK and F_UNLCK for use with F_SETLK (etc).
+
+File locking can be used like so:
+
+	fs.fcntl(fd, 'setlkw', constants.F_WRLCK, function(err, result)
+	{ 
+		
+	});
 
 ### fs.fcntlSync(fd, flags)
 
