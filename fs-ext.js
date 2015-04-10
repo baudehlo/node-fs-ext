@@ -61,13 +61,13 @@ function stringToFcntlFlags(flag) {
     case 'setfd':
       return binding.F_SETFD;
 
-    case 'setlk'
+    case 'setlk':
       return binding.F_SETLK;
 
-    case 'setlkw'
+    case 'setlkw':
       return binding.F_SETLKW;
 
-    case 'getlk'
+    case 'getlk':
       return binding.F_GETLK;
 
     default:
