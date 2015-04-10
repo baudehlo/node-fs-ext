@@ -192,9 +192,28 @@ static void EIO_Seek(uv_work_t *req) {
 
 static void EIO_Fcntl(uv_work_t *req) {
   store_data_t* data = static_cast<store_data_t *>(req->data);
-  int result = data->result = fcntl(data->fd, data->oper, data->arg);
+  
+  struct flock lk;
+  lk.l_start = 0;
+  lk.l_len = 0;
+  lk.l_type = 0;
+  lk.l_whence = 0;
+  lk.l_pid = 0;
+  
+  int result = -1;
+  if (data->oper == F_GETLK || data->oper == F_SETLK || data->oper == F_SETLKW) {
+	if (data->oper == F_SETLK || data->oper == F_SETLKW) {
+		lk.l_whence = SEEK_SET;
+		lk.l_type   = data->arg;
+	}
+	result = fcntl(data->fd, data->oper, &lk);
+  } else {
+  	result = fcntl(data->fd, data->oper, data->arg);
+  }
   if (result == -1) {
-    data->error = errno;
+   	data->error = errno;
+  } else {
+	data->result = result;  
   }
 }
 
@@ -553,6 +572,28 @@ init (Handle<Object> target)
 #ifdef FD_CLOEXEC
   NODE_DEFINE_CONSTANT(target, FD_CLOEXEC);
 #endif
+
+#ifdef F_RDLCK
+  NODE_DEFINE_CONSTANT(target, F_RDLCK);
+#endif
+
+#ifdef F_WRLCK
+  NODE_DEFINE_CONSTANT(target, F_WRLCK);
+#endif
+
+#ifdef F_SETLK
+  NODE_DEFINE_CONSTANT(target, F_SETLK);
+#endif
+
+#ifdef F_GETLK
+  NODE_DEFINE_CONSTANT(target, F_GETLK);
+#endif
+
+#ifdef F_SETLKW
+  NODE_DEFINE_CONSTANT(target, F_SETLKW);
+#endif
+
+
 
   NODE_SET_METHOD(target, "seek", Seek);
   NODE_SET_METHOD(target, "fcntl", Fcntl);
