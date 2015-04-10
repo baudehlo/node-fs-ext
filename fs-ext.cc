@@ -581,6 +581,10 @@ init (Handle<Object> target)
   NODE_DEFINE_CONSTANT(target, F_WRLCK);
 #endif
 
+#ifdef F_UNLCK
+  NODE_DEFINE_CONSTANT(target, F_UNLCK);
+#endif
+
 #ifdef F_SETLK
   NODE_DEFINE_CONSTANT(target, F_SETLK);
 #endif
