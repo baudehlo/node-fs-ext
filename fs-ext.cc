@@ -107,7 +107,7 @@ static void EIO_After(uv_work_t *req) {
   // for a success, which is possible.
   if (store_data->result == -1) {
     // If the request doesn't have a path parameter set.
-    argv[0] = ErrnoException(store_data->error);
+    argv[0] = NanErrnoException(store_data->error);
   } else {
     // error value is empty or null for non-error.
     argv[0] = NanNull();
@@ -155,7 +155,7 @@ static void EIO_After(uv_work_t *req) {
   store_data->cb->Call(argc, argv);
 
   if (try_catch.HasCaught()) {
-    FatalException(try_catch);
+    NanFatalException(try_catch);
   }
 
   // Dispose of the persistent handle
@@ -298,7 +298,7 @@ static NAN_METHOD(Flock) {
     int i = flock(flock_data->fd, flock_data->oper);
 #endif
     delete flock_data;
-    if (i != 0) return NanThrowError(ErrnoException(errno));
+    if (i != 0) return NanThrowError(NanErrnoException(errno));
     NanReturnUndefined();
   }
 }
@@ -342,7 +342,7 @@ static NAN_METHOD(Seek) {
 
   if ( ! args[3]->IsFunction()) {
     off_t offs_result = lseek(fd, offs, whence);
-    if (offs_result == -1) return NanThrowError(ErrnoException(errno));
+    if (offs_result == -1) return NanThrowError(NanErrnoException(errno));
     NanReturnValue(NanNew<Number>(offs_result));
   }
 
@@ -379,7 +379,7 @@ static NAN_METHOD(Fcntl) {
 
   if ( ! args[3]->IsFunction()) {
     int result = fcntl(fd, cmd, arg);
-    if (result == -1) return NanThrowError(ErrnoException(errno));
+    if (result == -1) return NanThrowError(NanErrnoException(errno));
     NanReturnValue(NanNew<Number>(result));
   }
 
@@ -438,7 +438,7 @@ static NAN_METHOD(UTime) {
     buf.actime  = atime;
     buf.modtime = mtime;
     int ret = utime(*path, &buf);
-    if (ret != 0) return NanThrowError(ErrnoException(errno, "utime", "", *path));
+    if (ret != 0) return NanThrowError(NanErrnoException(errno, "utime", "", *path));
     NanReturnUndefined();
   }
 
@@ -475,7 +475,7 @@ static NAN_METHOD(StatVFS) {
 #ifndef _WIN32  
     struct statvfs buf;
     int ret = statvfs(*path, &buf);
-    if (ret != 0) return NanThrowError(ErrnoException(errno, "statvfs", "", *path));
+    if (ret != 0) return NanThrowError(NanErrnoException(errno, "statvfs", "", *path));
     Handle<Object> result = NanNew<Object>();
     result->Set(NanNew<String>(f_namemax_symbol), NanNew<Integer>(static_cast<uint32_t>(buf.f_namemax)));
     result->Set(NanNew<String>(f_bsize_symbol), NanNew<Integer>(static_cast<uint32_t>(buf.f_bsize)));
