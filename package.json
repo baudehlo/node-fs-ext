@@ -13,7 +13,7 @@
   "engines": {
     "node": ">= v0.8.0"
   },
-  "dependencies": { "nan": "^1.9" },
+  "dependencies": { "nan": "^2.0" },
   "licenses": [ {
     "type": "MIT"
   } ],
