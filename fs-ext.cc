@@ -338,6 +338,7 @@ static NAN_METHOD(Seek) {
     off_t offs_result = lseek(fd, offs, whence);
     if (offs_result == -1) return Nan::ThrowError(Nan::NanErrnoException(errno));
     info.GetReturnValue().Set(Nan::New<Number>(offs_result));
+    return;
   }
 
   store_data_t* seek_data = new store_data_t();
@@ -373,6 +374,7 @@ static NAN_METHOD(Fcntl) {
     int result = fcntl(fd, cmd, arg);
     if (result == -1) return Nan::ThrowError(Nan::NanErrnoException(errno));
     info.GetReturnValue().Set(Nan::New<Number>(result));
+    return;
   }
 
   store_data_t* data = new store_data_t();
@@ -430,6 +432,7 @@ static NAN_METHOD(UTime) {
     int ret = utime(*path, &buf);
     if (ret != 0) return Nan::ThrowError(Nan::NanErrnoException(errno, "utime", "", *path));
     info.GetReturnValue().SetUndefined();
+    return;
   }
 
   store_data_t* utime_data = new store_data_t();
@@ -480,6 +483,7 @@ static NAN_METHOD(StatVFS) {
 #else
     info.GetReturnValue().SetUndefined();
 #endif
+    return;
   }
 
   store_data_t* statvfs_data = new store_data_t();
