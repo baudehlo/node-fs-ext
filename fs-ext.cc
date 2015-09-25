@@ -105,7 +105,7 @@ static void EIO_After(uv_work_t *req) {
   // for a success, which is possible.
   if (store_data->result == -1) {
     // If the request doesn't have a path parameter set.
-    argv[0] = NanErrnoException(store_data->error);
+    argv[0] = NanErrnoException(store_data->error, "", "", "");
   } else {
     // error value is empty or null for non-error.
     argv[0] = NanNull();
@@ -296,7 +296,7 @@ static NAN_METHOD(Flock) {
     int i = flock(flock_data->fd, flock_data->oper);
 #endif
     delete flock_data;
-    if (i != 0) return NanThrowError(NanErrnoException(errno));
+    if (i != 0) return NanThrowError(NanErrnoException(errno, "flock", "", ""));
     NanReturnUndefined();
   }
 }
@@ -340,7 +340,7 @@ static NAN_METHOD(Seek) {
 
   if ( ! args[3]->IsFunction()) {
     off_t offs_result = lseek(fd, offs, whence);
-    if (offs_result == -1) return NanThrowError(NanErrnoException(errno));
+    if (offs_result == -1) return NanThrowError(NanErrnoException(errno, "seek", "", ""));
     NanReturnValue(NanNew<Number>(offs_result));
   }
 
@@ -377,7 +377,7 @@ static NAN_METHOD(Fcntl) {
 
   if ( ! args[3]->IsFunction()) {
     int result = fcntl(fd, cmd, arg);
-    if (result == -1) return NanThrowError(NanErrnoException(errno));
+    if (result == -1) return NanThrowError(NanErrnoException(errno, "fcntl", "", ""));
     NanReturnValue(NanNew<Number>(result));
   }
 
