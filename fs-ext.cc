@@ -42,10 +42,10 @@
 using namespace v8;
 using namespace node;
 
-#define THROW_BAD_ARGS NanThrowTypeError("Bad argument")
+#define THROW_BAD_ARGS Nan::ThrowTypeError("Bad argument")
 
 struct store_data_t {
-  NanCallback *cb;
+  Nan::Callback *cb;
   int fs_op;  // operation type within this module
   int fd;
   int oper;
@@ -61,17 +61,17 @@ struct store_data_t {
 };
 
 #ifndef _WIN32
-static Persistent<String> f_namemax_symbol;
-static Persistent<String> f_bsize_symbol;
-static Persistent<String> f_frsize_symbol;
+static Nan::Persistent<String> f_namemax_symbol;
+static Nan::Persistent<String> f_bsize_symbol;
+static Nan::Persistent<String> f_frsize_symbol;
 
-static Persistent<String> f_blocks_symbol;
-static Persistent<String> f_bavail_symbol;
-static Persistent<String> f_bfree_symbol;
+static Nan::Persistent<String> f_blocks_symbol;
+static Nan::Persistent<String> f_bavail_symbol;
+static Nan::Persistent<String> f_bfree_symbol;
 
-static Persistent<String> f_files_symbol;
-static Persistent<String> f_favail_symbol;
-static Persistent<String> f_ffree_symbol;
+static Nan::Persistent<String> f_files_symbol;
+static Nan::Persistent<String> f_favail_symbol;
+static Nan::Persistent<String> f_ffree_symbol;
 #endif
 
 #ifdef _WIN32
@@ -91,7 +91,7 @@ enum
 };
 
 static void EIO_After(uv_work_t *req) {
-  NanScope();
+  Nan::HandleScope scope;
 
   store_data_t *store_data = static_cast<store_data_t *>(req->data);
 
@@ -105,10 +105,10 @@ static void EIO_After(uv_work_t *req) {
   // for a success, which is possible.
   if (store_data->result == -1) {
     // If the request doesn't have a path parameter set.
-    argv[0] = ErrnoException(store_data->error);
+    argv[0] = Nan::NanErrnoException(store_data->error);
   } else {
     // error value is empty or null for non-error.
-    argv[0] = NanNull();
+    argv[0] = Nan::Null();
 
     switch (store_data->fs_op) {
       // These operations have no data to pass other than "error".
@@ -119,41 +119,41 @@ static void EIO_After(uv_work_t *req) {
 
       case FS_OP_SEEK:
         argc = 2;
-        argv[1] = NanNew<Number>(store_data->offset);
+        argv[1] = Nan::New<Number>(store_data->offset);
         break;
       case FS_OP_STATVFS:
 #ifndef _WIN32
         argc = 2;
-        statvfs_result = NanNew<Object>();
+        statvfs_result = Nan::New<Object>();
         argv[1] = statvfs_result;
-        statvfs_result->Set(NanNew<String>(f_namemax_symbol), NanNew<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_namemax)));
-        statvfs_result->Set(NanNew<String>(f_bsize_symbol), NanNew<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_bsize)));
-        statvfs_result->Set(NanNew<String>(f_frsize_symbol), NanNew<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_frsize)));
-        statvfs_result->Set(NanNew<String>(f_blocks_symbol), NanNew<Number>(store_data->statvfs_buf.f_blocks));
-        statvfs_result->Set(NanNew<String>(f_bavail_symbol), NanNew<Number>(store_data->statvfs_buf.f_bavail));
-        statvfs_result->Set(NanNew<String>(f_bfree_symbol), NanNew<Number>(store_data->statvfs_buf.f_bfree));
-        statvfs_result->Set(NanNew<String>(f_files_symbol), NanNew<Number>(store_data->statvfs_buf.f_files));
-        statvfs_result->Set(NanNew<String>(f_favail_symbol), NanNew<Number>(store_data->statvfs_buf.f_favail));
-        statvfs_result->Set(NanNew<String>(f_ffree_symbol), NanNew<Number>(store_data->statvfs_buf.f_ffree));
+        statvfs_result->Set(Nan::New<String>(f_namemax_symbol), Nan::New<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_namemax)));
+        statvfs_result->Set(Nan::New<String>(f_bsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_bsize)));
+        statvfs_result->Set(Nan::New<String>(f_frsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_frsize)));
+        statvfs_result->Set(Nan::New<String>(f_blocks_symbol), Nan::New<Number>(store_data->statvfs_buf.f_blocks));
+        statvfs_result->Set(Nan::New<String>(f_bavail_symbol), Nan::New<Number>(store_data->statvfs_buf.f_bavail));
+        statvfs_result->Set(Nan::New<String>(f_bfree_symbol), Nan::New<Number>(store_data->statvfs_buf.f_bfree));
+        statvfs_result->Set(Nan::New<String>(f_files_symbol), Nan::New<Number>(store_data->statvfs_buf.f_files));
+        statvfs_result->Set(Nan::New<String>(f_favail_symbol), Nan::New<Number>(store_data->statvfs_buf.f_favail));
+        statvfs_result->Set(Nan::New<String>(f_ffree_symbol), Nan::New<Number>(store_data->statvfs_buf.f_ffree));
 #else
         argc = 1;
 #endif
         break;
       case FS_OP_FCNTL:
         argc = 2;
-        argv[1] = NanNew<Number>(store_data->result);
+        argv[1] = Nan::New<Number>(store_data->result);
         break;
       default:
         assert(0 && "Unhandled op type value");
     }
   }
 
-  TryCatch try_catch;
+  Nan::TryCatch try_catch;
 
   store_data->cb->Call(argc, argv);
 
   if (try_catch.HasCaught()) {
-    FatalException(try_catch);
+    Nan::FatalException(try_catch);
   }
 
   // Dispose of the persistent handle
@@ -288,24 +288,22 @@ static void EIO_Flock(uv_work_t *req) {
 }
 
 static NAN_METHOD(Flock) {
-  NanScope();
-
-  if (args.Length() < 2 || !args[0]->IsInt32() || !args[1]->IsInt32()) {
+  if (info.Length() < 2 || !info[0]->IsInt32() || !info[1]->IsInt32()) {
     return THROW_BAD_ARGS;
   }
 
   store_data_t* flock_data = new store_data_t();
   
   flock_data->fs_op = FS_OP_FLOCK;
-  flock_data->fd = args[0]->Int32Value();
-  flock_data->oper = args[1]->Int32Value();
+  flock_data->fd = info[0]->Int32Value();
+  flock_data->oper = info[1]->Int32Value();
 
-  if (args[2]->IsFunction()) {
-    flock_data->cb = new NanCallback((Local<Function>) args[2].As<Function>());
+  if (info[2]->IsFunction()) {
+    flock_data->cb = new Nan::Callback((Local<Function>) info[2].As<Function>());
     uv_work_t *req = new uv_work_t;
     req->data = flock_data;
     uv_queue_work(uv_default_loop(), req, EIO_Flock, (uv_after_work_cb)EIO_After);
-    NanReturnUndefined();
+    info.GetReturnValue().SetUndefined();
   } else {
 #ifdef _WIN32
     int i = _win32_flock(flock_data->fd, flock_data->oper);
@@ -313,8 +311,8 @@ static NAN_METHOD(Flock) {
     int i = flock(flock_data->fd, flock_data->oper);
 #endif
     delete flock_data;
-    if (i != 0) return NanThrowError(ErrnoException(errno));
-    NanReturnUndefined();
+    if (i != 0) return Nan::ThrowError(Nan::NanErrnoException(errno));
+    info.GetReturnValue().SetUndefined();
   }
 }
 
@@ -328,13 +326,13 @@ static inline int IsInt64(double x) {
 #ifndef _LARGEFILE_SOURCE
 #define ASSERT_OFFSET(a) \
   if (!(a)->IsUndefined() && !(a)->IsNull() && !(a)->IsInt32()) { \
-    return NanThrowTypeError("Not an integer"); \
+    return Nan::ThrowTypeError("Not an integer"); \
   }
 #define GET_OFFSET(a) ((a)->IsNumber() ? (a)->Int32Value() : -1)
 #else
 #define ASSERT_OFFSET(a) \
   if (!(a)->IsUndefined() && !(a)->IsNull() && !IsInt64((a)->NumberValue())) { \
-    return NanThrowTypeError("Not an integer"); \
+    return Nan::ThrowTypeError("Not an integer"); \
   }
 #define GET_OFFSET(a) ((a)->IsNumber() ? (a)->IntegerValue() : -1)
 #endif
@@ -342,28 +340,27 @@ static inline int IsInt64(double x) {
 //  fs.seek(fd, position, whence [, callback] )
 
 static NAN_METHOD(Seek) {
-  NanScope();
-
-  if (args.Length() < 3 || 
-     !args[0]->IsInt32() || 
-     !args[2]->IsInt32()) {
+  if (info.Length() < 3 || 
+     !info[0]->IsInt32() || 
+     !info[2]->IsInt32()) {
     return THROW_BAD_ARGS;
   }
 
-  int fd = args[0]->Int32Value();
-  ASSERT_OFFSET(args[1]);
-  off_t offs = GET_OFFSET(args[1]);
-  int whence = args[2]->Int32Value();
+  int fd = info[0]->Int32Value();
+  ASSERT_OFFSET(info[1]);
+  off_t offs = GET_OFFSET(info[1]);
+  int whence = info[2]->Int32Value();
 
-  if ( ! args[3]->IsFunction()) {
+  if ( ! info[3]->IsFunction()) {
     off_t offs_result = lseek(fd, offs, whence);
-    if (offs_result == -1) return NanThrowError(ErrnoException(errno));
-    NanReturnValue(NanNew<Number>(offs_result));
+    if (offs_result == -1) return Nan::ThrowError(Nan::NanErrnoException(errno));
+    info.GetReturnValue().Set(Nan::New<Number>(offs_result));
+    return;
   }
 
   store_data_t* seek_data = new store_data_t();
 
-  seek_data->cb = new NanCallback((Local<Function>) args[3].As<Function>());
+  seek_data->cb = new Nan::Callback((Local<Function>) info[3].As<Function>());
   seek_data->fs_op = FS_OP_SEEK;
   seek_data->fd = fd;
   seek_data->offset = offs;
@@ -373,34 +370,33 @@ static NAN_METHOD(Seek) {
   req->data = seek_data;
   uv_queue_work(uv_default_loop(), req, EIO_Seek, (uv_after_work_cb)EIO_After);
 
-  NanReturnUndefined();
+  info.GetReturnValue().SetUndefined();
 }
 
 //  fs.fcntl(fd, cmd, [arg])
 
 static NAN_METHOD(Fcntl) {
-  NanScope();
-
-  if (args.Length() < 3 ||
-     !args[0]->IsInt32() ||
-     !args[1]->IsInt32() ||
-     !args[2]->IsInt32()) {
+  if (info.Length() < 3 ||
+     !info[0]->IsInt32() ||
+     !info[1]->IsInt32() ||
+     !info[2]->IsInt32()) {
     return THROW_BAD_ARGS;
   }
 
-  int fd = args[0]->Int32Value();
-  int cmd = args[1]->Int32Value();
-  int arg = args[2]->Int32Value();
+  int fd = info[0]->Int32Value();
+  int cmd = info[1]->Int32Value();
+  int arg = info[2]->Int32Value();
 
-  if ( ! args[3]->IsFunction()) {
+  if ( ! info[3]->IsFunction()) {
     int result = fcntl(fd, cmd, arg);
-    if (result == -1) return NanThrowError(ErrnoException(errno));
-    NanReturnValue(NanNew<Number>(result));
+    if (result == -1) return Nan::ThrowError(Nan::NanErrnoException(errno));
+    info.GetReturnValue().Set(Nan::New<Number>(result));
+    return;
   }
 
   store_data_t* data = new store_data_t();
 
-  data->cb = new NanCallback((Local<Function>) args[3].As<Function>());
+  data->cb = new Nan::Callback((Local<Function>) info[3].As<Function>());
   data->fs_op = FS_OP_FCNTL;
   data->fd = fd;
   data->oper = cmd;
@@ -410,7 +406,7 @@ static NAN_METHOD(Fcntl) {
   req->data = data;
   uv_queue_work(uv_default_loop(), req, EIO_Fcntl, (uv_after_work_cb)EIO_After);
 
-  NanReturnUndefined();
+  info.GetReturnValue().SetUndefined();
 }
 
 
@@ -433,33 +429,32 @@ static void EIO_UTime(uv_work_t *req) {
 //   fs.utime( path, atime, mtime, [callback] )
 
 static NAN_METHOD(UTime) {
-  NanScope();
-
-  if (args.Length() < 3 ||
-      args.Length() > 4 ||
-      !args[0]->IsString() ||
-      !args[1]->IsNumber() ||
-      !args[2]->IsNumber() ) {
+  if (info.Length() < 3 ||
+      info.Length() > 4 ||
+      !info[0]->IsString() ||
+      !info[1]->IsNumber() ||
+      !info[2]->IsNumber() ) {
     return THROW_BAD_ARGS;
   }
 
-  String::Utf8Value path(args[0]->ToString());
-  time_t atime = args[1]->IntegerValue();
-  time_t mtime = args[2]->IntegerValue();
+  String::Utf8Value path(info[0]->ToString());
+  time_t atime = info[1]->IntegerValue();
+  time_t mtime = info[2]->IntegerValue();
 
   // Synchronous call needs much less work
-  if ( ! args[3]->IsFunction()) {
+  if ( ! info[3]->IsFunction()) {
     struct utimbuf buf;
     buf.actime  = atime;
     buf.modtime = mtime;
     int ret = utime(*path, &buf);
-    if (ret != 0) return NanThrowError(ErrnoException(errno, "utime", "", *path));
-    NanReturnUndefined();
+    if (ret != 0) return Nan::ThrowError(Nan::NanErrnoException(errno, "utime", "", *path));
+    info.GetReturnValue().SetUndefined();
+    return;
   }
 
   store_data_t* utime_data = new store_data_t();
 
-  utime_data->cb = new NanCallback((Local<Function>) args[3].As<Function>());
+  utime_data->cb = new Nan::Callback((Local<Function>) info[3].As<Function>());
   utime_data->fs_op = FS_OP_UTIME;
   utime_data->path = strdup(*path);
   utime_data->utime_buf.actime  = atime;
@@ -469,49 +464,48 @@ static NAN_METHOD(UTime) {
   req->data = utime_data;
   uv_queue_work(uv_default_loop(), req, EIO_UTime, (uv_after_work_cb)EIO_After);
 
-  NanReturnUndefined();
+  info.GetReturnValue().SetUndefined();
 }
 
 // Wrapper for statvfs(2).
 //   fs.statVFS( path, [callback] )
 
 static NAN_METHOD(StatVFS) {
-  NanScope();
-
-  if (args.Length() < 1 ||
-      !args[0]->IsString() ) {
+  if (info.Length() < 1 ||
+      !info[0]->IsString() ) {
     return THROW_BAD_ARGS;
   }
 
-  String::Utf8Value path(args[0]->ToString());
+  String::Utf8Value path(info[0]->ToString());
   
   // Synchronous call needs much less work
-  if (!args[1]->IsFunction()) {
+  if (!info[1]->IsFunction()) {
 #ifndef _WIN32  
     struct statvfs buf;
     int ret = statvfs(*path, &buf);
-    if (ret != 0) return NanThrowError(ErrnoException(errno, "statvfs", "", *path));
-    Handle<Object> result = NanNew<Object>();
-    result->Set(NanNew<String>(f_namemax_symbol), NanNew<Integer>(static_cast<uint32_t>(buf.f_namemax)));
-    result->Set(NanNew<String>(f_bsize_symbol), NanNew<Integer>(static_cast<uint32_t>(buf.f_bsize)));
-    result->Set(NanNew<String>(f_frsize_symbol), NanNew<Integer>(static_cast<uint32_t>(buf.f_frsize)));
+    if (ret != 0) return Nan::ThrowError(Nan::NanErrnoException(errno, "statvfs", "", *path));
+    Local<Object> result = Nan::New<Object>();
+    result->Set(Nan::New<String>(f_namemax_symbol), Nan::New<Integer>(static_cast<uint32_t>(buf.f_namemax)));
+    result->Set(Nan::New<String>(f_bsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(buf.f_bsize)));
+    result->Set(Nan::New<String>(f_frsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(buf.f_frsize)));
     
-    result->Set(NanNew<String>(f_blocks_symbol), NanNew<Number>(buf.f_blocks));
-    result->Set(NanNew<String>(f_bavail_symbol), NanNew<Number>(buf.f_bavail));
-    result->Set(NanNew<String>(f_bfree_symbol), NanNew<Number>(buf.f_bfree));
+    result->Set(Nan::New<String>(f_blocks_symbol), Nan::New<Number>(buf.f_blocks));
+    result->Set(Nan::New<String>(f_bavail_symbol), Nan::New<Number>(buf.f_bavail));
+    result->Set(Nan::New<String>(f_bfree_symbol), Nan::New<Number>(buf.f_bfree));
     
-    result->Set(NanNew<String>(f_files_symbol), NanNew<Number>(buf.f_files));
-    result->Set(NanNew<String>(f_favail_symbol), NanNew<Number>(buf.f_favail));
-    result->Set(NanNew<String>(f_ffree_symbol), NanNew<Number>(buf.f_ffree));
-    NanReturnValue(result);
+    result->Set(Nan::New<String>(f_files_symbol), Nan::New<Number>(buf.f_files));
+    result->Set(Nan::New<String>(f_favail_symbol), Nan::New<Number>(buf.f_favail));
+    result->Set(Nan::New<String>(f_ffree_symbol), Nan::New<Number>(buf.f_ffree));
+    info.GetReturnValue().Set(result);
 #else
-    NanReturnUndefined();
+    info.GetReturnValue().SetUndefined();
 #endif
+    return;
   }
 
   store_data_t* statvfs_data = new store_data_t();
 
-  statvfs_data->cb = new NanCallback((Local<Function>) args[1].As<Function>());
+  statvfs_data->cb = new Nan::Callback((Local<Function>) info[1].As<Function>());
   statvfs_data->fs_op = FS_OP_STATVFS;
   statvfs_data->path = strdup(*path);
 
@@ -519,13 +513,13 @@ static NAN_METHOD(StatVFS) {
   req->data = statvfs_data;
   uv_queue_work(uv_default_loop(), req, EIO_StatVFS,(uv_after_work_cb)EIO_After);
 
-  NanReturnUndefined();
+  info.GetReturnValue().SetUndefined();
 }
 
-extern "C" void
-init (Handle<Object> target)
+extern "C"
+NAN_MODULE_INIT(init)
 {
-  NanScope();
+  Nan::HandleScope scope;
 
 #ifdef _WIN32
   _set_invalid_parameter_handler(uv__crt_invalid_parameter_handler);
@@ -594,26 +588,24 @@ init (Handle<Object> target)
 #ifdef F_SETLKW
   NODE_DEFINE_CONSTANT(target, F_SETLKW);
 #endif
+  target->Set(Nan::New<String>("seek").ToLocalChecked(), Nan::New<FunctionTemplate>(Seek)->GetFunction());
+  target->Set(Nan::New<String>("fcntl").ToLocalChecked(), Nan::New<FunctionTemplate>(Fcntl)->GetFunction());
+  target->Set(Nan::New<String>("flock").ToLocalChecked(), Nan::New<FunctionTemplate>(Flock)->GetFunction());
+  target->Set(Nan::New<String>("utime").ToLocalChecked(), Nan::New<FunctionTemplate>(UTime)->GetFunction());
+  target->Set(Nan::New<String>("statVFS").ToLocalChecked(), Nan::New<FunctionTemplate>(StatVFS)->GetFunction());
 
-
-
-  NODE_SET_METHOD(target, "seek", Seek);
-  NODE_SET_METHOD(target, "fcntl", Fcntl);
-  NODE_SET_METHOD(target, "flock", Flock);
-  NODE_SET_METHOD(target, "utime", UTime);
-  NODE_SET_METHOD(target, "statVFS", StatVFS);
 #ifndef _WIN32
-  NanAssignPersistent(f_namemax_symbol, NanNew<String>("f_namemax"));
-  NanAssignPersistent(f_bsize_symbol, NanNew<String>("f_bsize"));
-  NanAssignPersistent(f_frsize_symbol, NanNew<String>("f_frsize"));
+  f_namemax_symbol.Reset(Nan::New<String>("f_namemax").ToLocalChecked());
+  f_bsize_symbol.Reset(Nan::New<String>("f_bsize").ToLocalChecked());
+  f_frsize_symbol.Reset(Nan::New<String>("f_frsize").ToLocalChecked());
   
-  NanAssignPersistent(f_blocks_symbol, NanNew<String>("f_blocks"));
-  NanAssignPersistent(f_bavail_symbol, NanNew<String>("f_bavail"));
-  NanAssignPersistent(f_bfree_symbol, NanNew<String>("f_bfree"));
+  f_blocks_symbol.Reset(Nan::New<String>("f_blocks").ToLocalChecked());
+  f_bavail_symbol.Reset(Nan::New<String>("f_bavail").ToLocalChecked());
+  f_bfree_symbol.Reset(Nan::New<String>("f_bfree").ToLocalChecked());
   
-  NanAssignPersistent(f_files_symbol, NanNew<String>("f_files"));
-  NanAssignPersistent(f_favail_symbol, NanNew<String>("f_favail"));
-  NanAssignPersistent(f_ffree_symbol, NanNew<String>("f_ffree"));
+  f_files_symbol.Reset(Nan::New<String>("f_files").ToLocalChecked());
+  f_favail_symbol.Reset(Nan::New<String>("f_favail").ToLocalChecked());
+  f_ffree_symbol.Reset(Nan::New<String>("f_ffree").ToLocalChecked());
 #endif
 }
 
