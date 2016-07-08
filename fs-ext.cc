@@ -39,6 +39,8 @@
 #include <sys/utime.h>
 #endif
 
+#include "fs-win.h"
+
 using namespace v8;
 using namespace node;
 
@@ -565,6 +567,10 @@ NAN_MODULE_INIT(init)
   f_files_symbol.Reset(Nan::New<String>("f_files").ToLocalChecked());
   f_favail_symbol.Reset(Nan::New<String>("f_favail").ToLocalChecked());
   f_ffree_symbol.Reset(Nan::New<String>("f_ffree").ToLocalChecked());
+#endif
+
+#ifdef _WIN32
+  fs_win::init(target);
 #endif
 }
 

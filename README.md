@@ -1,7 +1,8 @@
 fs-ext
 ======
 
-Extras not included in Node's fs module.
+Extras not included in Node's fs module
+and cross-platform file ownership handling.
 
 Installation
 ------------
@@ -92,5 +93,68 @@ Just like for utime(2), the absence of the `atime` and `mtime` means 'now'.
 Synchronous version of utime().  Throws an exception on error.
 
 
+### fs.stat(path, [callback])
+
+Replaces the `fs.stat` returning the string representation of
+[SIDs](http://msdn.microsoft.com/en-us/library/windows/desktop/aa379594.aspx)
+of the owning user and group in the `uid` and `gid` attributes of the output
+`stats` object.
+
+### fs.statSync(path)
+
+Replaces the `fs.statSync` returning the string representation of
+[SIDs](http://msdn.microsoft.com/en-us/library/windows/desktop/aa379594.aspx)
+of the owning user and group in the `uid` and `gid` attributes of the output
+`stats` object.
 
 
+### fs.lstat(path, [callback])
+
+Replaces the `fs.lstat` returning the string representation of
+[SIDs](http://msdn.microsoft.com/en-us/library/windows/desktop/aa379594.aspx)
+of the owning user and group in the `uid` and `gid` attributes of the output
+`stats` object.
+
+### fs.lstatSync(path)
+
+Replaces the `fs.lstatSync` returning the string representation of
+[SIDs](http://msdn.microsoft.com/en-us/library/windows/desktop/aa379594.aspx)
+of the owning user and group in the `uid` and `gid` attributes of the output
+`stats` object.
+
+
+### fs.fstat(fd, [callback])
+
+Replaces the `fs.fstat` returning the string representation of
+[SIDs](http://msdn.microsoft.com/en-us/library/windows/desktop/aa379594.aspx)
+of the owning user and group in the `uid` and `gid` attributes of the output
+`stats` object.
+
+### fs.fstatSync(fd)
+
+Replaces the `fs.fstatSync` returning the string representation of
+[SIDs](http://msdn.microsoft.com/en-us/library/windows/desktop/aa379594.aspx)
+of the owning user and group in the `uid` and `gid` attributes of the output
+`stats` object.
+
+
+### fs.chown(path, [callback])
+
+Replaces the `fs.chown` expecting `uid` and `gid` as the string representation
+of [SIDs](http://msdn.microsoft.com/en-us/library/windows/desktop/aa379594.aspx).
+
+### fs.chownSync(path)
+
+Replaces the `fs.chownSync` expecting `uid` and `gid` as the string representation
+of [SIDs](http://msdn.microsoft.com/en-us/library/windows/desktop/aa379594.aspx).
+
+
+### fs.fchown(fd, [callback])
+
+Replaces the `fs.fchown` expecting `uid` and `gid` as the string representation
+of [SIDs](http://msdn.microsoft.com/en-us/library/windows/desktop/aa379594.aspx).
+
+### fs.fchownSync(fd)
+
+Replaces the `fs.fchownSync`  expecting `uid` and `gid` as the string representation
+of [SIDs](http://msdn.microsoft.com/en-us/library/windows/desktop/aa379594.aspx).

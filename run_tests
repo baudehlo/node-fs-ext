@@ -8,6 +8,11 @@ node tests/test-fs-flock.js
 
 node tests/test-fs-utime.js
 
+node tests/test-fs-stat.js
+
+# this test must be run as root
+#sudo node tests/test-fs-chown.js
+
 # for stress testing only 
 # node tests/test-fs-seek_stress.js
 # node tests/test-fs-flock_stress.js
