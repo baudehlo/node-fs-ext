@@ -1,0 +1,23 @@
+notifications:
+    email:
+        - dev@ideal.com
+    slack: ideal:Ac38yYQo0Q74kYY7udUzoWLD
+language: node_js
+dist: trusty
+node_js:
+    - "0.10.45"
+    - "7"
+    - "6"
+script:
+    - npm run lint
+    - npm test
+
+after_success:
+    - npm install istanbul codecov
+    - npm run cover
+    - ./node_modules/.bin/codecov
+
+cache:
+    directories:
+        - node_modules
+
