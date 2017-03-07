@@ -165,14 +165,14 @@ static void EIO_After(uv_work_t *req) {
 static void EIO_StatVFS(uv_work_t *req) {
   store_data_t* statvfs_data = static_cast<store_data_t *>(req->data);
   statvfs_data->result = 0;
-#ifndef _WIN32  
+#ifndef _WIN32
   struct statvfs *data = &(statvfs_data->statvfs_buf);
   if (statvfs(statvfs_data->path, data)) {
     statvfs_data->result = -1;
   	memset(data, 0, sizeof(struct statvfs));
   };
 #endif
-  free(statvfs_data->path);	
+  free(statvfs_data->path);
   ;
 }
 
@@ -217,7 +217,7 @@ static int _win32_flock(int fd, int oper) {
   fh = (HANDLE)_get_osfhandle(fd);
   if (fh == (HANDLE)-1)
     return -1;
-  
+
   memset(&o, 0, sizeof(o));
 
   switch(oper) {
@@ -264,7 +264,7 @@ static void EIO_Flock(uv_work_t *req) {
 #else
   int i = flock(flock_data->fd, flock_data->oper);
 #endif
-  
+
   flock_data->result = i;
   flock_data->error = errno;
 
@@ -276,7 +276,7 @@ static NAN_METHOD(Flock) {
   }
 
   store_data_t* flock_data = new store_data_t();
-  
+
   flock_data->fs_op = FS_OP_FLOCK;
   flock_data->fd = info[0]->Int32Value();
   flock_data->oper = info[1]->Int32Value();
@@ -294,7 +294,7 @@ static NAN_METHOD(Flock) {
     int i = flock(flock_data->fd, flock_data->oper);
 #endif
     delete flock_data;
-    if (i != 0) return Nan::ThrowError(Nan::ErrnoException(errno));
+    if (i != 0) return Nan::ThrowError(Nan::ErrnoException(errno, "Flock", ""));
     info.GetReturnValue().SetUndefined();
   }
 }
@@ -323,8 +323,8 @@ static inline int IsInt64(double x) {
 //  fs.seek(fd, position, whence [, callback] )
 
 static NAN_METHOD(Seek) {
-  if (info.Length() < 3 || 
-     !info[0]->IsInt32() || 
+  if (info.Length() < 3 ||
+     !info[0]->IsInt32() ||
      !info[2]->IsInt32()) {
     return THROW_BAD_ARGS;
   }
@@ -405,7 +405,7 @@ static void EIO_UTime(uv_work_t *req) {
   } else {
     utime_data->result = i;
   }
-  
+
 }
 
 // Wrapper for utime(2).
@@ -460,10 +460,10 @@ static NAN_METHOD(StatVFS) {
   }
 
   String::Utf8Value path(info[0]->ToString());
-  
+
   // Synchronous call needs much less work
   if (!info[1]->IsFunction()) {
-#ifndef _WIN32  
+#ifndef _WIN32
     struct statvfs buf;
     int ret = statvfs(*path, &buf);
     if (ret != 0) return Nan::ThrowError(Nan::ErrnoException(errno, "statvfs", "", *path));
@@ -471,11 +471,11 @@ static NAN_METHOD(StatVFS) {
     result->Set(Nan::New<String>(f_namemax_symbol), Nan::New<Integer>(static_cast<uint32_t>(buf.f_namemax)));
     result->Set(Nan::New<String>(f_bsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(buf.f_bsize)));
     result->Set(Nan::New<String>(f_frsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(buf.f_frsize)));
-    
+
     result->Set(Nan::New<String>(f_blocks_symbol), Nan::New<Number>(buf.f_blocks));
     result->Set(Nan::New<String>(f_bavail_symbol), Nan::New<Number>(buf.f_bavail));
     result->Set(Nan::New<String>(f_bfree_symbol), Nan::New<Number>(buf.f_bfree));
-    
+
     result->Set(Nan::New<String>(f_files_symbol), Nan::New<Number>(buf.f_files));
     result->Set(Nan::New<String>(f_favail_symbol), Nan::New<Number>(buf.f_favail));
     result->Set(Nan::New<String>(f_ffree_symbol), Nan::New<Number>(buf.f_ffree));
@@ -557,11 +557,11 @@ NAN_MODULE_INIT(init)
   f_namemax_symbol.Reset(Nan::New<String>("f_namemax").ToLocalChecked());
   f_bsize_symbol.Reset(Nan::New<String>("f_bsize").ToLocalChecked());
   f_frsize_symbol.Reset(Nan::New<String>("f_frsize").ToLocalChecked());
-  
+
   f_blocks_symbol.Reset(Nan::New<String>("f_blocks").ToLocalChecked());
   f_bavail_symbol.Reset(Nan::New<String>("f_bavail").ToLocalChecked());
   f_bfree_symbol.Reset(Nan::New<String>("f_bfree").ToLocalChecked());
-  
+
   f_files_symbol.Reset(Nan::New<String>("f_files").ToLocalChecked());
   f_favail_symbol.Reset(Nan::New<String>("f_favail").ToLocalChecked());
   f_ffree_symbol.Reset(Nan::New<String>("f_ffree").ToLocalChecked());
