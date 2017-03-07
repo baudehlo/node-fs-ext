@@ -21,3 +21,6 @@ cache:
     directories:
         - node_modules
 
+env:
+    global:
+    - CODECOV_TOKEN=88ae9a05-ad28-4ce5-baa4-34bb0c4a055c
