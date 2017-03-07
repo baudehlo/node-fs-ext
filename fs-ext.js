@@ -17,6 +17,8 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+"use strict";
+
 var binding = require('./build/Release/fs-ext');
 var fs = require('fs');
 var constants = require('constants');
@@ -91,7 +93,7 @@ exports.fcntl = function(fd, cmd, arg, callback) {
     callback = arg;
     arg = 0;
   }
-  if(!arg) arg = 0;
+  if (!arg) arg = 0;
   return binding.fcntl(fd, cmd, arg, callback);
 };
 
@@ -147,14 +149,15 @@ exports.statVFS = function(path, callback) {
 };
 
 // populate with fs functions from there
-for (var key in fs) {
-    exports[key] = fs[key];
+var key;
+for (key in fs) {
+  exports[key] = fs[key];
 }
 
 // put constants into constants module (don't like doing this but...)
-for (var key in binding) {
-    if (/^[A-Z_]+$/.test(key) && !constants.hasOwnProperty(key)) {
-        constants[key] = binding[key];
-    }
+for (key in binding) {
+  if (/^[A-Z_]+$/.test(key) && !constants.hasOwnProperty(key)) {
+    constants[key] = binding[key];
+  }
 }
 
