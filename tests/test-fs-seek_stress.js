@@ -1,16 +1,17 @@
+"use strict";
 
 // Stress test these APIs as published in extension module 'fs-ext'
 // Specifically, try to exercise any memory leaks by simple repetition.
 
 //    fs.seek(fd, offset, whence, [callback])
 //
-//  Asynchronous lseek(2).  
+//  Asynchronous lseek(2).
 //
 //  callback will be given two arguments (err, currFilePos).
-// 
-//  whence can be 0 (SEEK_SET) to set the new position in bytes to offset, 
-//  1 (SEEK_CUR) to set the new position to the current position plus offset 
-//  bytes (can be negative), or 2 (SEEK_END) to set to the end of the file 
+//
+//  whence can be 0 (SEEK_SET) to set the new position in bytes to offset,
+//  1 (SEEK_CUR) to set the new position to the current position plus offset
+//  bytes (can be negative), or 2 (SEEK_END) to set to the end of the file
 //  plus offset bytes (usually negative or zero to seek to the end of the file).
 //
 //    fs.seekSync(fd, offset, whence)
@@ -25,23 +26,23 @@
 //  console.log( require.resolve('../fs-ext'));
 
 var assert = require('assert'),
-    path   = require('path'),
-    util   = require('util'),
-    fs     = require('../fs-ext');
+  path   = require('path'),
+  util   = require('util'),
+  fs     = require('../fs-ext');
 
 var tests_ok  = 0,
-    tests_run = 0;
+  tests_run = 0;
 
 var debug_me = true;
-    debug_me = false;
+debug_me = false;
 
 var tmp_dir = "/tmp",
-    file_path     = path.join(tmp_dir, 'what.when.seek.test'),
-    file_path_not = path.join(tmp_dir, 'what.not.seek.test');
+  file_path     = path.join(tmp_dir, 'what.when.seek.test'),
+  file_path_not = path.join(tmp_dir, 'what.not.seek.test');
 
 var file_fd,
-    result,
-    err;
+  result,
+  err;
 
 
 // Report on test results -  -  -  -  -  -  -  -  -  -  -  -
@@ -56,7 +57,8 @@ process.addListener('exit', function() {
 
   try {
     fs.closeSync(file_fd);
-  } catch (e) {
+  }
+  catch (e) {
     // might not be open, that's okay.
   }
 
@@ -72,16 +74,17 @@ process.addListener('exit', function() {
 function remove_file_wo_error(file_path) {
   try {
     fs.unlinkSync(file_path);
-  } catch (e) {
+  }
+  catch (e) {
     // might not exist, that's okay.
   }
 }
 
 function display_memory_usage_now() {
   var usage = process.memoryUsage();
-  console.log('    memory:  heapUsed  %d      rss       %d', 
+  console.log('    memory:  heapUsed  %d      rss       %d',
                                 usage.heapUsed,  usage.rss);
-  console.log('             heapTotal %d      vsize     %d', 
+  console.log('             heapTotal %d      vsize     %d',
                                 usage.heapTotal, usage.vsize);
 }
 
@@ -92,20 +95,21 @@ function expect_value(api_name, err, value_seen, value_expected) {
   if ( err ) {
     if ( err instanceof Error ) {
       fault_msg = api_name + '(): returned error ' + err.message;
-    } else {
+    }
+    else {
       fault_msg = api_name + '(): returned error ' + err;
     }
-  } else {
-    if ( value_seen !== value_expected ) {
-      fault_msg = api_name + '(): wrong value ' + value_seen +
+  }
+  else if ( value_seen !== value_expected ) {
+    fault_msg = api_name + '(): wrong value ' + value_seen +
                                    '  (expecting ' + value_expected + ')';
-    }
   }
 
   if ( ! fault_msg ) {
     tests_ok++;
     if (debug_me) console.log('        OK: %s() returned ', api_name, value_seen);
-  } else {
+  }
+  else {
     console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
     console.log('   ARGS: ', util.inspect(arguments));
   }
@@ -121,24 +125,28 @@ function expect_errno(api_name, err, value_seen, expected_errno) {
     if ( err instanceof Error ) {
       if ( err.code !== undefined ) {
         if ( err.code !== expected_errno ) {
-            fault_msg = api_name + '(): returned wrong errno \'' + err.message +
+          fault_msg = api_name + '(): returned wrong errno \'' + err.message +
                                       '\'  (expecting ' + expected_errno + ')';
-          }
-      } else {
+        }
+      }
+      else {
         fault_msg = api_name + '(): returned wrong error \'' + err + '\'';
       }
-    } else {
+    }
+    else {
       fault_msg = api_name + '(): returned wrong error \'' + err + '\'';
     }
-  } else {
-    fault_msg = api_name + '(): expected errno \'' + expected_errno + 
+  }
+  else {
+    fault_msg = api_name + '(): expected errno \'' + expected_errno +
                                  '\', but got result ' + value_seen;
   }
 
   if ( ! fault_msg ) {
     tests_ok++;
     if (debug_me) console.log(' FAILED OK: ' + api_name );
-  } else {
+  }
+  else {
     console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
     if (debug_me) console.log('   ARGS: ', util.inspect(arguments));
   }
@@ -148,7 +156,7 @@ function expect_errno(api_name, err, value_seen, expected_errno) {
 
 // Setup for testing    -  -  -  -  -  -  -  -  -  -  -  -
 
-// We assume that test-fs-seek.js has run successfully before this 
+// We assume that test-fs-seek.js has run successfully before this
 // test and so we omit several duplicate tests.
 
 // Delete any prior copy of test data file(s)
@@ -159,13 +167,14 @@ tests_run++;
 try {
   file_fd = fs.openSync(file_path, 'w');
   tests_ok++;
-} catch (e) {
+}
+catch (e) {
   console.log('  Unable to create test data file %j', file_path);
   console.log('    Error was: %j', e);
 }
 
 
-if ( tests_run !== tests_ok ) {     
+if ( tests_run !== tests_ok ) {
   process.exit(1);
 }
 
@@ -173,8 +182,8 @@ if ( tests_run !== tests_ok ) {
 // Stress testing    -  -  -  -  -  -  -  -  -  -  -  -  -
 
 var how_many_times,
-    how_many_secs,
-    how_many_done;
+  how_many_secs,
+  how_many_done;
 
 
 console.log('  Start time is %s', new Date());
@@ -190,23 +199,23 @@ if (0) {
   setTimeout(function ho_hum(){
     how_many_secs -= 1;
     if (how_many_secs > 0 ) {
-      setTimeout(ho_hum,1000);
+      setTimeout(ho_hum, 1000);
       return;
     }
     console.log('  After "do nothing" testing for %d seconds:', how_many_secs);
     display_memory_usage_now();
     console.log('        Time is %s', new Date());
-  }, 
+  },
   1000 );
 }
 
 
-// Repeat a successful seekSync() call 
-if( 1 ) {
+// Repeat a successful seekSync() call
+if ( 1 ) {
   how_many_times = 10000000;
   //how_many_times = 4;
 
-  for( var i=0 ; i<how_many_times ; i++ ) {
+  for ( var i=0 ; i<how_many_times ; i++ ) {
     tests_run++;
     result = err = undefined;
     result = fs.seekSync(file_fd, 0, 0);
@@ -219,8 +228,8 @@ if( 1 ) {
 }
 
 
-// Repeat a successful seek() call 
-if( 1 ) {
+// Repeat a successful seek() call
+if ( 1 ) {
   how_many_times = 1000000;
   //how_many_times = 4;
   how_many_done  = 0;
@@ -242,9 +251,10 @@ if( 1 ) {
 
     test_failing_seek();
   });
-} else {
+}
+else {
   test_failing_seek();
-}  
+}
 
 function test_failing_seek() {
 
@@ -268,7 +278,6 @@ function test_failing_seek() {
       display_memory_usage_now();
       console.log('        Time is %s', new Date());
     });
-  } else {
   }
 
 }
@@ -276,8 +285,8 @@ function test_failing_seek() {
 
 
 //------------------------------------------------------------------------------
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-//-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
 
 // ### fs.seek(fd, offset, whence, [callback])
 
