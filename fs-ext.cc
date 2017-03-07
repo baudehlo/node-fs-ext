@@ -105,7 +105,7 @@ static void EIO_After(uv_work_t *req) {
   // for a success, which is possible.
   if (store_data->result == -1) {
     // If the request doesn't have a path parameter set.
-    argv[0] = Nan::ErrnoException(store_data->error);
+    argv[0] = Nan::ErrnoException(store_data->error, "EIO_After", "");
   } else {
     // error value is empty or null for non-error.
     argv[0] = Nan::Null();
@@ -336,7 +336,7 @@ static NAN_METHOD(Seek) {
 
   if ( ! info[3]->IsFunction()) {
     off_t offs_result = lseek(fd, offs, whence);
-    if (offs_result == -1) return Nan::ThrowError(Nan::ErrnoException(errno));
+    if (offs_result == -1) return Nan::ThrowError(Nan::ErrnoException(errno, "Seek", ""));
     info.GetReturnValue().Set(Nan::New<Number>(offs_result));
     return;
   }
@@ -372,7 +372,7 @@ static NAN_METHOD(Fcntl) {
 
   if ( ! info[3]->IsFunction()) {
     int result = fcntl(fd, cmd, arg);
-    if (result == -1) return Nan::ThrowError(Nan::ErrnoException(errno));
+    if (result == -1) return Nan::ThrowError(Nan::ErrnoException(errno, "Fcntl", ""));
     info.GetReturnValue().Set(Nan::New<Number>(result));
     return;
   }
