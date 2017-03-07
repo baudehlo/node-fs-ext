@@ -1,7 +1,6 @@
 notifications:
     email:
-        - dev@ideal.com
-    slack: ideal:Ac38yYQo0Q74kYY7udUzoWLD
+        - helpme+github@gmail.com
 language: node_js
 dist: trusty
 node_js:
