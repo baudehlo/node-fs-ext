@@ -1,3 +1,5 @@
+"use strict";
+
 var fs = require(__dirname+'/../fs-ext.js');
 
 
