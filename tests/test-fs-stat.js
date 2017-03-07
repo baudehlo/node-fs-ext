@@ -1,11 +1,11 @@
 // tests the fs methods stat, lstat and fstat
 "use strict";
 var assert = require("assert"),
-    path = require("path"),
-    fs = require("../fs-ext"),
-    tmp_dir = process.env.TMP || process.env.TEMP || "/tmp",
-    file_path = path.join(tmp_dir, "fs-ext_stat.test"),
-    fd, stats;
+  path = require("path"),
+  fs = require("../fs-ext"),
+  tmp_dir = process.env.TMP || process.env.TEMP || "/tmp",
+  file_path = path.join(tmp_dir, "fs-ext_stat.test"),
+  fd, stats;
 
 function check_stats(stats) {
   if (process.platform.match(/^win/i)) {
@@ -13,7 +13,8 @@ function check_stats(stats) {
     assert.equal(stats.uid.indexOf("S-"), 0);
     assert.equal(typeof stats.gid, "string");
     assert.equal(stats.gid.indexOf("S-"), 0);
-  } else {
+  }
+  else {
     assert.equal(typeof stats.uid, "number");
     assert.equal(typeof stats.gid, "number");
   }
@@ -48,10 +49,14 @@ fs.fstat(fd, function (error, stats) {
 process.addListener("exit", function() {
   try {
     fs.closeSync(fd);
-  } catch (error) {}
+  }
+  catch (error) {
+    // Do nothing
+  }
   try {
     fs.unlinkSync(file_path);
-  } catch (error) {
+  }
+  catch (error) {
     console.warn("  deleting", file_path, "failed");
   }
 });

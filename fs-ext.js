@@ -180,198 +180,204 @@ var fsExt = process.platform.match(/^win/i) ?
 
     var path = require("path"),
 
-        // declare the extra methods for the built-in fs module
-        // which provide the POSIX functionality on Windows
-        fsExt = (function () {
+      // declare the extra methods for the built-in fs module
+      // which provide the POSIX functionality on Windows
+      fsExt = (function () {
 
-          // merges the ownership to the stats
-          function completeStats(stats, fd, callback) {
-            // allow calling with both fd and path
-            (typeof fd === "string" ? binding.getown :
-              binding.fgetown)(fd, function(error, ownership) {
+        // merges the ownership to the stats
+        function completeStats(stats, fd, callback) {
+          // allow calling with both fd and path
+          (typeof fd === "string" ? binding.getown :
+            binding.fgetown)(fd, function(error, ownership) {
               if (error) {
                 callback(error);
-              } else {
+              }
+              else {
                 // replace the uid and gid members in the original stats
                 // with the values containing SIDs
                 merge(stats, ownership);
                 callback(undefined, stats);
               }
             });
-          }
+        }
 
-          // merges the ownership to the stats
-          function completeStatsSync(stats, fd) {
-            // allow calling with both fd and path
-            var ownership = (typeof fd === "string" ?
-              binding.getown : binding.fgetown)(fd);
-            // replace the uid and gid members in the original stats
-            // with the values containing SIDs
-            merge(stats, ownership);
-            return stats;
-          }
+        // merges the ownership to the stats
+        function completeStatsSync(stats, fd) {
+          // allow calling with both fd and path
+          var ownership = (typeof fd === "string" ?
+            binding.getown : binding.fgetown)(fd);
+          // replace the uid and gid members in the original stats
+          // with the values containing SIDs
+          merge(stats, ownership);
+          return stats;
+        }
 
-          return {
+        return {
 
-            // fs.fstat returning uid and gid as SIDs
-            fstat: function(fd, callback) {
-              // get the built-in stats which work on Windows too
-              fs.fstat(fd, function(error, stats) {
-                if (error) {
-                  callback(error);
-                } else {
-                  // replace the ownership information (uid and gid)
-                  // with the data useful on Windows - principal SIDs
-                  completeStats(stats, fd, callback);
-                }
-              });
-            },
-
-            // fs.fstatSync returning uid and gid as SIDs
-            fstatSync: function(fd) {
-              // get the built-in stats which work on Windows too
-              var stats = fs.fstatSync(fd);
-              // replace the ownership information (uid and gid)
-              // with the data useful on Windows - principal SIDs
-              return completeStatsSync(stats, fd);
-            },
-
-            // fs.stat returning uid and gid as SIDs
-            stat: function(fpath, callback) {
-              // get the built-in stats which work on Windows too
-              fs.lstat(fpath, function(error, stats) {
-                if (error) {
-                  callback(error);
-                } else {
-                  // GetNamedSecurityInfo, which is used by binding.getown,
-                  // doesn't resolve sybolic links automatically; do the
-                  // resolution here and call the lstat implementation
-                  if (stats.isSymbolicLink()) {
-                    fs.readlink(fpath, function(error, lpath) {
-                      if (error) {
-                        callback(error);
-                      } else {
-                        fpath = resolveLink(fpath, lpath);
-                        fsExt.lstat(fpath, callback);
-                      }
-                    });
-                  } else {
-                    // replace the ownership information (uid and gid)
-                    // with the data useful on Windows - principal SIDs
-                    completeStats(stats, fpath, callback);
-                  }
-                }
-              });
-            },
-
-            // fs.statSync returning uid and gid as SIDs
-            statSync: function(fpath) {
-              // get the built-in stats which work on Windows too
-              // GetNamedSecurityInfo, which is used by binding.getown,
-              // doesn't resolve sybolic links automatically; do the
-              // resolution here and call the lstat implementation
-              var stats = fs.lstatSync(fpath);
-              if (stats.isSymbolicLink()) {
-                var lpath = fs.readlinkSync(fpath);
-                fpath = resolveLink(fpath, lpath);
-                return fsExt.lstatSync(fpath);
-              }
-              // replace the ownership information (uid and gid)
-              // with the data useful on Windows - principal SIDs
-              return completeStatsSync(stats, fpath);
-            },
-
-            // fs.lstat returning uid and gid as SIDs
-            lstat: function(fpath, callback) {
-              // get the built-in stats which work on Windows too
-              fs.lstat(fpath, function(error, stats) {
-                if (error) {
-                  callback(error);
-                } else {
-                  // replace the ownership information (uid and gid)
-                  // with the data useful on Windows - principal SIDs
-                  completeStats(stats, fpath, callback);
-                }
-              });
-            },
-
-            // fs.lstatSync returning uid and gid as SIDs
-            lstatSync: function(fpath) {
-              // get the built-in stats which work on Windows too
-              // GetNamedSecurityInfo, which is used by binding.getown,
-              // doesn't resolve sybolic links automatically; it's
-              // suitable for the lstat implementation as-is
-              var stats = fs.lstatSync(fpath);
-              // replace the ownership information (uid and gid)
-              // with the data useful on Windows - principal SIDs
-              return completeStatsSync(stats, fpath);
-            },
-
-            // fs.fchown accepting uid and gid as SIDs
-            fchown: function(fd, uid, gid, callback) {
-              binding.fchown(fd, uid, gid, function(error) {
+          // fs.fstat returning uid and gid as SIDs
+          fstat: function(fd, callback) {
+            // get the built-in stats which work on Windows too
+            fs.fstat(fd, function(error, stats) {
+              if (error) {
                 callback(error);
-              });
-            },
+              }
+              else {
+                // replace the ownership information (uid and gid)
+                // with the data useful on Windows - principal SIDs
+                completeStats(stats, fd, callback);
+              }
+            });
+          },
 
-            // fs.fchownSync accepting uid and gid as SIDs
-            fchownSync: function(fd, uid, gid) {
-              binding.fchown(fd, uid, gid);
-            },
+          // fs.fstatSync returning uid and gid as SIDs
+          fstatSync: function(fd) {
+            // get the built-in stats which work on Windows too
+            var stats = fs.fstatSync(fd);
+            // replace the ownership information (uid and gid)
+            // with the data useful on Windows - principal SIDs
+            return completeStatsSync(stats, fd);
+          },
 
-            // fs.chown accepting uid and gid as SIDs
-            chown: function(fpath, uid, gid, callback) {
-              fs.lstat(fpath, function(error, stats) {
-                if (error) {
-                  callback(error);
-                } else {
-                  if (stats.isSymbolicLink()) {
-                    fs.readlink(fpath, function(error, lpath) {
-                      if (error) {
-                        callback(error);
-                      } else {
-                        fpath = resolveLink(fpath, lpath);
-                        fsExt.lchown(fpath, uid, gid, callback);
-                      }
-                    });
-                  } else {
+          // fs.stat returning uid and gid as SIDs
+          stat: function(fpath, callback) {
+            // get the built-in stats which work on Windows too
+            fs.lstat(fpath, function(error, stats) {
+              if (error) {
+                callback(error);
+              }
+              else if (stats.isSymbolicLink()) {
+                // GetNamedSecurityInfo, which is used by binding.getown,
+                // doesn't resolve sybolic links automatically; do the
+                // resolution here and call the lstat implementation
+                
+                fs.readlink(fpath, function(error, lpath) {
+                  if (error) {
+                    callback(error);
+                  }
+                  else {
+                    fpath = resolveLink(fpath, lpath);
+                    fsExt.lstat(fpath, callback);
+                  }
+                });
+              }
+              else {
+                // replace the ownership information (uid and gid)
+                // with the data useful on Windows - principal SIDs
+                completeStats(stats, fpath, callback);
+              }
+            });
+          },
+
+          // fs.statSync returning uid and gid as SIDs
+          statSync: function(fpath) {
+            // get the built-in stats which work on Windows too
+            // GetNamedSecurityInfo, which is used by binding.getown,
+            // doesn't resolve sybolic links automatically; do the
+            // resolution here and call the lstat implementation
+            var stats = fs.lstatSync(fpath);
+            if (stats.isSymbolicLink()) {
+              var lpath = fs.readlinkSync(fpath);
+              fpath = resolveLink(fpath, lpath);
+              return fsExt.lstatSync(fpath);
+            }
+            // replace the ownership information (uid and gid)
+            // with the data useful on Windows - principal SIDs
+            return completeStatsSync(stats, fpath);
+          },
+
+          // fs.lstat returning uid and gid as SIDs
+          lstat: function(fpath, callback) {
+            // get the built-in stats which work on Windows too
+            fs.lstat(fpath, function(error, stats) {
+              if (error) {
+                callback(error);
+              }
+              else {
+                // replace the ownership information (uid and gid)
+                // with the data useful on Windows - principal SIDs
+                completeStats(stats, fpath, callback);
+              }
+            });
+          },
+
+          // fs.lstatSync returning uid and gid as SIDs
+          lstatSync: function(fpath) {
+            // get the built-in stats which work on Windows too
+            // GetNamedSecurityInfo, which is used by binding.getown,
+            // doesn't resolve sybolic links automatically; it's
+            // suitable for the lstat implementation as-is
+            var stats = fs.lstatSync(fpath);
+            // replace the ownership information (uid and gid)
+            // with the data useful on Windows - principal SIDs
+            return completeStatsSync(stats, fpath);
+          },
+
+          // fs.fchown accepting uid and gid as SIDs
+          fchown: function(fd, uid, gid, callback) {
+            binding.fchown(fd, uid, gid, function(error) {
+              callback(error);
+            });
+          },
+
+          // fs.fchownSync accepting uid and gid as SIDs
+          fchownSync: function(fd, uid, gid) {
+            binding.fchown(fd, uid, gid);
+          },
+
+          // fs.chown accepting uid and gid as SIDs
+          chown: function(fpath, uid, gid, callback) {
+            fs.lstat(fpath, function(error, stats) {
+              if (error) {
+                callback(error);
+              }
+              else if (stats.isSymbolicLink()) {
+                fs.readlink(fpath, function(error, lpath) {
+                  if (error) {
+                    callback(error);
+                  }
+                  else {
+                    fpath = resolveLink(fpath, lpath);
                     fsExt.lchown(fpath, uid, gid, callback);
                   }
-                }
-              });
-            },
-
-            // fs.chownSync accepting uid and gid as SIDs
-            chownSync: function(fpath, uid, gid) {
-              // SetNamedSecurityInfo, which is used by binding.chown,
-              // doesn't resolve sybolic links automatically; do the
-              // resolution here and call the lchown implementation
-              var stats = fs.lstatSync(fpath);
-              if (stats.isSymbolicLink()) {
-                var lpath = fs.readlinkSync(fpath);
-                fpath = resolveLink(fpath, lpath);
+                });
               }
-              fsExt.lchownSync(fpath, uid, gid);
-            },
+              else {
+                fsExt.lchown(fpath, uid, gid, callback);
+              }
+            });
+          },
 
-            // fs.lchown accepting uid and gid as SIDs
-            lchown: function(fpath, uid, gid, callback) {
-              binding.chown(fpath, uid, gid, function(error) {
-                callback(error);
-              });
-            },
-
-            // fs.lchownSync accepting uid and gid as SIDs
-            lchownSync: function(fpath, uid, gid) {
-              // SetNamedSecurityInfo, which is used by binding.chown,
-              // doesn't resolve sybolic links automatically; it's
-              // suitable for the lchown implementation as-is
-              binding.chown(fpath, uid, gid);
+          // fs.chownSync accepting uid and gid as SIDs
+          chownSync: function(fpath, uid, gid) {
+            // SetNamedSecurityInfo, which is used by binding.chown,
+            // doesn't resolve sybolic links automatically; do the
+            // resolution here and call the lchown implementation
+            var stats = fs.lstatSync(fpath);
+            if (stats.isSymbolicLink()) {
+              var lpath = fs.readlinkSync(fpath);
+              fpath = resolveLink(fpath, lpath);
             }
+            fsExt.lchownSync(fpath, uid, gid);
+          },
 
-          };
+          // fs.lchown accepting uid and gid as SIDs
+          lchown: function(fpath, uid, gid, callback) {
+            binding.chown(fpath, uid, gid, function(error) {
+              callback(error);
+            });
+          },
 
-        }());
+          // fs.lchownSync accepting uid and gid as SIDs
+          lchownSync: function(fpath, uid, gid) {
+            // SetNamedSecurityInfo, which is used by binding.chown,
+            // doesn't resolve sybolic links automatically; it's
+            // suitable for the lchown implementation as-is
+            binding.chown(fpath, uid, gid);
+          }
+
+        };
+
+      }());
 
     return fsExt;
   }())
@@ -386,7 +392,7 @@ merge(exports, fs);
 merge(exports, fsExt);
 
 // put constants into constants module (don't like doing this but...)
-for (key in binding) {
+for (var key in binding) {
   if (/^[A-Z_]+$/.test(key) && !constants.hasOwnProperty(key)) {
     constants[key] = binding[key];
   }
