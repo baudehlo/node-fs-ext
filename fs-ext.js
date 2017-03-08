@@ -32,19 +32,19 @@ function stringToFlockFlags(flag) {
   switch (flag) {
     case 'sh':
       return binding.LOCK_SH;
-    
+
     case 'ex':
       return binding.LOCK_EX;
-    
+
     case 'shnb':
       return binding.LOCK_SH | binding.LOCK_NB;
-    
+
     case 'exnb':
       return binding.LOCK_EX | binding.LOCK_NB;
-    
+
     case 'un':
       return binding.LOCK_UN;
-    
+
     default:
       throw new Error('Unknown flock flag: ' + flag);
   }
@@ -59,10 +59,19 @@ function stringToFcntlFlags(flag) {
   switch (flag) {
     case 'getfd':
       return binding.F_GETFD;
-    
+
     case 'setfd':
       return binding.F_SETFD;
-    
+
+    case 'setlk':
+      return binding.F_SETLK;
+
+    case 'setlkw':
+      return binding.F_SETLKW;
+
+    case 'getlk':
+      return binding.F_GETLK;
+
     default:
       throw new Error('Unknown fcntl flag: ' + flag);
   }

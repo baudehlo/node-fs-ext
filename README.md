@@ -38,6 +38,11 @@ Asynchronous flock(2). No arguments other than a possible error are passed to
 the callback. Flags can be 'sh', 'ex', 'shnb', 'exnb', 'un' and correspond
 to the various LOCK_SH, LOCK_EX, LOCK_SH|LOCK_NB, etc.
 
+NOTE (from flock() man page): flock() does not lock files over NFS. Use fcntl(2)
+instead: that does work over NFS, given a sufficiently recent version of Linux
+and a server which supports locking.
+
+
 ### fs.flockSync(fd, flags)
 
 Synchronous flock(2). Throws an exception on error.
@@ -52,8 +57,20 @@ The supported commands are:
 
 - 'getfd' ( F_GETFD )
 - 'setfd' ( F_SETFD )
+- 'setlk' ( F_SETLK )
+- 'getlk' ( F_GETLK )
+- 'setlkw' ( F_SETLKW )
 
-Requiring this module adds `FD_CLOEXEC` to the constants module, for use with F_SETFD.
+Requiring this module adds `FD_CLOEXEC` to the constants module, for use with F_SETFD,
+and also F_RDLCK, F_WRLCK and F_UNLCK for use with F_SETLK (etc).
+
+File locking can be used like so:
+
+	fs.fcntl(fd, 'setlkw', constants.F_WRLCK, function(err, result) { 
+		if (result!=null) {
+			//Lock succeeded
+		}
+	});
 
 ### fs.fcntlSync(fd, flags)
 

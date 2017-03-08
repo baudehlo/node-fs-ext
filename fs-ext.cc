@@ -192,9 +192,26 @@ static void EIO_Seek(uv_work_t *req) {
 
 static void EIO_Fcntl(uv_work_t *req) {
   store_data_t* data = static_cast<store_data_t *>(req->data);
-  int result = data->result = fcntl(data->fd, data->oper, data->arg);
+  
+  struct flock lk;
+  lk.l_start = 0;
+  lk.l_len = 0;
+  lk.l_type = 0;
+  lk.l_whence = 0;
+  lk.l_pid = 0;
+  
+  int result = -1;
+  if (data->oper == F_GETLK || data->oper == F_SETLK || data->oper == F_SETLKW) {
+	if (data->oper == F_SETLK || data->oper == F_SETLKW) {
+		lk.l_whence = SEEK_SET;
+		lk.l_type   = data->arg;
+	}
+	data->result = result = fcntl(data->fd, data->oper, &lk); 
+  } else {
+  	data->result = result = fcntl(data->fd, data->oper, data->arg);
+  }
   if (result == -1) {
-    data->error = errno;
+   	data->error = errno;
   }
 }
 
@@ -548,11 +565,35 @@ NAN_MODULE_INIT(init)
   NODE_DEFINE_CONSTANT(target, FD_CLOEXEC);
 #endif
 
+#ifdef F_RDLCK
+  NODE_DEFINE_CONSTANT(target, F_RDLCK);
+#endif
+
+#ifdef F_WRLCK
+  NODE_DEFINE_CONSTANT(target, F_WRLCK);
+#endif
+
+#ifdef F_UNLCK
+  NODE_DEFINE_CONSTANT(target, F_UNLCK);
+#endif
+
+#ifdef F_SETLK
+  NODE_DEFINE_CONSTANT(target, F_SETLK);
+#endif
+
+#ifdef F_GETLK
+  NODE_DEFINE_CONSTANT(target, F_GETLK);
+#endif
+
+#ifdef F_SETLKW
+  NODE_DEFINE_CONSTANT(target, F_SETLKW);
+#endif
   target->Set(Nan::New<String>("seek").ToLocalChecked(), Nan::New<FunctionTemplate>(Seek)->GetFunction());
   target->Set(Nan::New<String>("fcntl").ToLocalChecked(), Nan::New<FunctionTemplate>(Fcntl)->GetFunction());
   target->Set(Nan::New<String>("flock").ToLocalChecked(), Nan::New<FunctionTemplate>(Flock)->GetFunction());
   target->Set(Nan::New<String>("utime").ToLocalChecked(), Nan::New<FunctionTemplate>(UTime)->GetFunction());
   target->Set(Nan::New<String>("statVFS").ToLocalChecked(), Nan::New<FunctionTemplate>(StatVFS)->GetFunction());
+
 #ifndef _WIN32
   f_namemax_symbol.Reset(Nan::New<String>("f_namemax").ToLocalChecked());
   f_bsize_symbol.Reset(Nan::New<String>("f_bsize").ToLocalChecked());
