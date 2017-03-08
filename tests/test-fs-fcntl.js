@@ -1,3 +1,4 @@
+"use strict";
 
 // Test these APIs as published in extension module 'fs-ext'
 //
@@ -6,22 +7,20 @@
 //  console.log( require.resolve('../fs-ext'));
 
 var assert = require('assert'),
-    path   = require('path'),
-    util   = require('util'),
-    fs     = require('../fs-ext');
+  path   = require('path'),
+  util   = require('util'),
+  fs     = require('../fs-ext');
 
 var tests_ok  = 0,
-    tests_run = 0;
+  tests_run = 0;
 
-var debug_me = true;
-    debug_me = false;
+var debug_me = false;
 
 var tmp_dir = "/tmp",
-    file_path     = path.join(tmp_dir, 'what.when.fcntl.test'),
-    file_path_not = path.join(tmp_dir, 'what.not.fcntl.test');
+  file_path     = path.join(tmp_dir, 'what.when.fcntl.test');
 
 var file_fd,
-    err;
+  err;
 
 
 // Report on test results -  -  -  -  -  -  -  -  -  -  -  -
@@ -31,7 +30,8 @@ process.addListener('exit', function() {
 
   try {
     fs.closeSync(file_fd);
-  } catch (e) {
+  }
+  catch (e) {
     // might not be open, that's okay.
   }
 
@@ -47,7 +47,8 @@ process.addListener('exit', function() {
 function remove_file_wo_error(file_path) {
   try {
     fs.unlinkSync(file_path);
-  } catch (e) {
+  }
+  catch (e) {
     // might not exist, that's okay.
   }
 }
@@ -58,15 +59,17 @@ function expect_errno(api_name, resource, err, expected_errno) {
   if (debug_me) console.log('  expected_errno(err): ' + err );
 
   if ( err  &&  err.code !== expected_errno ) {
-      fault_msg = api_name + '(): expected error ' + expected_errno + ', got another error';
-  } else if ( !err ) {
+    fault_msg = api_name + '(): expected error ' + expected_errno + ', got another error';
+  }
+  else if ( !err ) {
     fault_msg = api_name + '(): expected error ' + expected_errno + ', got another error';
   }
 
   if ( ! fault_msg ) {
     tests_ok++;
     if (debug_me) console.log(' FAILED OK: ' + api_name );
-  } else {
+  }
+  else {
     console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
     console.log('   ARGS: ', util.inspect(arguments));
   }
@@ -82,7 +85,8 @@ function expect_ok(api_name, resource, err) {
   if ( ! fault_msg ) {
     tests_ok++;
     if (debug_me) console.log('        OK: ' + api_name );
-  } else {
+  }
+  else {
     console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
     console.log('   ARGS: ', util.inspect(arguments));
   }
@@ -96,21 +100,23 @@ function expect_ok(api_name, resource, err) {
 
 tests_run++;
 if ( typeof fs.fcntl !== 'function' ) {
-  console.log('fs.fcntl API is missing'); 
-} else {  
+  console.log('fs.fcntl API is missing');
+}
+else {
   tests_ok++;
 }
 
 tests_run++;
 if ( typeof fs.fcntlSync !== 'function' ) {
   console.log('fs.fcntlSync API is missing');
-} else {  
+}
+else {
   tests_ok++;
 }
 
 
 // If any pre-checks and setup fail, quit before tests
-if ( tests_run !== tests_ok ) {     
+if ( tests_run !== tests_ok ) {
   process.exit(1);
 }
 
@@ -122,18 +128,19 @@ tests_run++;
 try {
   file_fd = fs.openSync(file_path, 'w');
   tests_ok++;
-} catch (e) {
+}
+catch (e) {
   console.log('  Unable to create test data file %j', file_path);
   console.log('    Error was: %j', e);
 }
 
 
-if ( tests_run !== tests_ok ) {     
+if ( tests_run !== tests_ok ) {
   process.exit(1);
 }
 
 
-// Test that constants are published -  -  -  -  -  -  -  - 
+// Test that constants are published -  -  -  -  -  -  -  -
 
 var fs_binding = require('../build/Release/fs-ext');
 
@@ -147,8 +154,9 @@ constant_names.forEach(function(name){
   if ( fs_binding[name] !== undefined  &&
      typeof fs_binding[name] === 'number' ) {
     tests_ok++;
-  } else {
-    console.log('FAILURE: %s is not defined correctly', name);  
+  }
+  else {
+    console.log('FAILURE: %s is not defined correctly', name);
     console.log('  %s    %j    %j', name, fs_binding[name], typeof fs_binding[name]);
   }
 });
@@ -161,15 +169,17 @@ constant_names.forEach(function(name){
 tests_run++;
 try {
   err = fs.fcntlSync(undefined, 0);
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 
 if (err) {
   if (debug_me) console.log('    err    %j', err);
   tests_ok++;
-} else {
-  if (debug_me) console.log('    expected error from undefined fd argument');
+}
+else if (debug_me) {
+  console.log('    expected error from undefined fd argument');
 }
 
 
@@ -178,35 +188,39 @@ if (err) {
 tests_run++;
 try {
   err = fs.fcntlSync('foo', 0);
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 
 if (err) {
   if (debug_me) console.log('    err    %j', err);
   tests_ok++;
-} else {
-  if (debug_me) console.log('    expected error from non-numeric fd argument');
+}
+else if (debug_me) {
+  console.log('    expected error from non-numeric fd argument');
 }
 
 
-// fd value is negative 
+// fd value is negative
 
 tests_run++;
 try {
   err = fs.fcntlSync(-9, 0);
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 expect_errno('fcntlSync', -9, err, 'EBADF');
 
 
-// fd value is 'impossible' 
+// fd value is 'impossible'
 
 tests_run++;
 try {
   err = fs.fcntlSync(98765, 0);
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 expect_errno('fcntlSync', 98765, err, 'EBADF');
@@ -218,26 +232,29 @@ expect_errno('fcntlSync', 98765, err, 'EBADF');
 tests_run++;
 try {
   err = fs.fcntlSync(file_fd, 'foo');
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 
-//    "message": "Unknown fcntl flag: foo" 
+//    "message": "Unknown fcntl flag: foo"
 if (err) {
   if (debug_me) console.log('    err    %j', err);
   tests_ok++;
-} else {
-  if (debug_me) console.log('    expected error from non-numeric fd argument');
+}
+else if (debug_me) {
+  console.log('    expected error from non-numeric fd argument');
 }
 
 
-// Test valid calls: fcntlSync  -  -  -  -  -  -  -  -  -  - 
+// Test valid calls: fcntlSync  -  -  -  -  -  -  -  -  -  -
 
 tests_run++;
 try {
   err = null;
   fs.fcntlSync(file_fd, 'getfd');
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 expect_ok('fcntlSync', file_fd, err);
@@ -262,12 +279,13 @@ try {
   if ((flags & fs_binding.FD_CLOEXEC) === fs_binding.FD_CLOEXEC) {
     throw new Error("Expected FD_CLOEXEC to be cleared");
   }
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 expect_ok('fcntlSync', file_fd, err);
 
-// Test valid calls: fcntl  -  -  -  -  -  -  -  -  -  -  - 
+// Test valid calls: fcntl  -  -  -  -  -  -  -  -  -  -  -
 
 // SEEK_SET to 0
 
@@ -302,7 +320,7 @@ fs.fcntl(file_fd, 'getfd', function(err, flags) {
           }
 
 
-          // Test invalid calls: fcntl  -  -  -  -  -  -  -  -  - 
+          // Test invalid calls: fcntl  -  -  -  -  -  -  -  -  -
 
           // offset value is negative
           tests_run++;
@@ -312,15 +330,17 @@ fs.fcntl(file_fd, 'getfd', function(err, flags) {
               console.log('  unexpected callback from fcntl() with bad argument');
             });
             err = undefined;
-          } catch (e) {
+          }
+          catch (e) {
             err = e;
           }
           //    "message": "Unknown fcntl flag: foo"
           if (err) {
             if (debug_me) console.log('    err    %j', err);
             tests_ok++;
-          } else {
-            if (debug_me) console.log('  unexpected success  from fcntl() with bad argument');
+          }
+          else if (debug_me) {
+            console.log('  unexpected success  from fcntl() with bad argument');
           }
         });
       });

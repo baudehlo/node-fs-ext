@@ -1,9 +1,10 @@
+"use strict";
 
 // Test these APIs as published in extension module 'fs-ext'
 //
-// fs.utime(path, 
+// fs.utime(path,
 //
-// fs.utimeSync(path, 
+// fs.utimeSync(path,
 //
 // Synchronous utime(2). Throws an exception on error.
 
@@ -22,23 +23,23 @@
 //  console.log( require.resolve('../fs-ext'));
 
 var assert = require('assert'),
-    path   = require('path'),
-    util   = require('util'),
-    fs     = require('../fs-ext');
+  path   = require('path'),
+  util   = require('util'),
+  fs     = require('../fs-ext');
 
 var tests_ok = 0;
 var tests_run = 0;
 
 var debug_me = true;
-    debug_me = false;
+debug_me = false;
 
 var tmp_dir = "/tmp",
-    file_path     = path.join(tmp_dir, 'what.when.utime.test'),
-    file_path_not = path.join(tmp_dir, 'what.not.utime.test');
+  file_path     = path.join(tmp_dir, 'what.when.utime.test'),
+  file_path_not = path.join(tmp_dir, 'what.not.utime.test');
 
 var file_fd,
-    result,
-    err;
+  result,
+  err;
 
 
 // Report on test results -  -  -  -  -  -  -  -  -  -  -  -
@@ -65,13 +66,15 @@ function remove_file_wo_error(file_path) {
   // Delete any prior copy of test data file(s)
   try {
     fs.unlinkSync(file_path);
-  } catch (e) {
+  }
+  catch (e) {
     // might not exist, that's okay.
   }
   
   try {
     fs.unlinkSync(file_path_not);
-  } catch (e) {
+  }
+  catch (e) {
     // might not exist, that's okay.
   }
 }
@@ -90,23 +93,29 @@ function expect_ok(api_name, resource, err) {
   if ( err ) {
     if ( err instanceof Error ) {
       fault_msg = api_name + '(): returned error ' + err.message;
-    } else {
+    }
+    else {
       fault_msg = api_name + '(): returned error ' + err;
     }
-  } else if ( atime_seen == atime_old ) {
+  }
+  else if ( atime_seen == atime_old ) {
     fault_msg = api_name + '(): atime was unchanged';
-  } else if ( mtime_seen == mtime_old ) {
+  }
+  else if ( mtime_seen == mtime_old ) {
     fault_msg = api_name + '(): mtime was unchanged';
-  } else if ( atime_seen !== atime_req ) {
+  }
+  else if ( atime_seen !== atime_req ) {
     fault_msg = api_name + '(): atime not correct result';
-  } else if ( mtime_seen !== mtime_req ) {
+  }
+  else if ( mtime_seen !== mtime_req ) {
     fault_msg = api_name + '(): mtime not correct result';
   }
 
   if ( ! fault_msg ) {
     tests_ok++;
     if (debug_me) console.log('        OK: ' + api_name );
-  } else {
+  }
+  else {
     //XXX Create array from arguments adding xtime_req, xtime_seen to end?
     console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
     //if (debug_me) console.log('   ARGS: ', util.inspect(arguments));
@@ -123,24 +132,28 @@ function expect_errno(api_name, err, value_seen, expected_errno) {
     if ( err instanceof Error ) {
       if ( err.code !== undefined ) {
         if ( err.code !== expected_errno ) {
-            fault_msg = api_name + '(): returned wrong errno \'' + err.message +
+          fault_msg = api_name + '(): returned wrong errno \'' + err.message +
                                       '\'  (expecting ' + expected_errno + ')';
-          }
-      } else {
+        }
+      }
+      else {
         fault_msg = api_name + '(): returned wrong error \'' + err + '\'';
       }
-    } else {
+    }
+    else {
       fault_msg = api_name + '(): returned wrong error \'' + err + '\'';
     }
-  } else {
-    fault_msg = api_name + '(): expected errno \'' + expected_errno + 
+  }
+  else {
+    fault_msg = api_name + '(): expected errno \'' + expected_errno +
                                  '\', but got result ' + value_seen;
   }
 
   if ( ! fault_msg ) {
     tests_ok++;
     if (debug_me) console.log(' FAILED OK: ' + api_name );
-  } else {
+  }
+  else {
     console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
     //if (debug_me) console.log('   ARGS: ', util.inspect(arguments));
   }
@@ -156,20 +169,22 @@ function expect_errno(api_name, err, value_seen, expected_errno) {
 
 tests_run++;
 if ( typeof fs.utime !== 'function' ) {
-  console.log('fs.utime API is missing'); 
-} else {  
+  console.log('fs.utime API is missing');
+}
+else {
   tests_ok++;
 }
 
 tests_run++;
 if ( typeof fs.utimeSync !== 'function' ) {
   console.log('fs.utimeSync API is missing');
-} else {  
+}
+else {
   tests_ok++;
 }
 
 // If any pre-checks and setup fail, quit before tests
-if ( tests_run !== tests_ok ) {     
+if ( tests_run !== tests_ok ) {
   process.exit(2);
 }
 
@@ -180,18 +195,19 @@ remove_file_wo_error(file_path);
 // Create a new file
 tests_run++;
 try {
-  var file_fd = fs.openSync(file_path, 'w');
+  file_fd = fs.openSync(file_path, 'w');
   fs.closeSync(file_fd);
   tests_ok++;
-} catch (e) {
+}
+catch (e) {
   console.log('  Unable to create test data file %j', file_path);
   console.log('    Error was: %j', e);
 }
 
 
 var atime_old,    mtime_old,
-    atime_req,    mtime_req,
-    atime_seen,   mtime_seen;
+  atime_req,    mtime_req,
+  atime_seen,   mtime_seen;
 
 function debug_show_times() {
   console.log('  atime/mtime old   %d  %d', atime_old,   mtime_old  );
@@ -223,6 +239,7 @@ function setup_test_values( new_atime, new_mtime ) {
 }
 
 function check_results(test_path) {
+  var api_name; // Declared because it's used below but this seems to be stale code
   get_times_seen(test_path);
   console.log('  atime/mtime old   %d  %d', atime_old,   mtime_old  );
   console.log('  atime/mtime reqd  %d  %d', atime_req,   mtime_req  );
@@ -252,14 +269,15 @@ if (debug_me) {
 }
 
 
-// Use wrong filename to get 'ENOENT' error                   
+// Use wrong filename to get 'ENOENT' error
 
 setup_test_values( 0, 0 );
 tests_run++;
 result = err = undefined;
 try {
   result = fs.utimeSync(file_path_not, atime_req, mtime_req);
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 expect_errno('utimeSync', err, result, 'ENOENT');
@@ -274,7 +292,8 @@ tests_run++;
 result = err = undefined;
 try {
   result = fs.utimeSync(file_path);
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 expect_ok('utimeSync', file_path, err);
@@ -289,7 +308,8 @@ tests_run++;
 result = err = undefined;
 try {
   result = fs.utimeSync(file_path, atime_req, mtime_req);
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 expect_ok('utimeSync', file_path, err);
@@ -305,7 +325,8 @@ tests_run++;
 result = err = undefined;
 try {
   result = fs.utimeSync(file_path, atime_req, mtime_req);
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 expect_ok('utimeSync', file_path, err);
@@ -319,7 +340,8 @@ tests_run++;
 result = err = undefined;
 try {
   result = fs.utimeSync(file_path, atime_req, mtime_req);
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 expect_ok('utimeSync', file_path, err);
@@ -338,8 +360,8 @@ fs.utime(file_path, atime_req, mtime_req, function(err){
   expect_ok('utime', file_path, err);
   if (debug_me) debug_show_times_long();
 
-  // Set to 'now' 
-  setup_test_values( date2unixtime(new Date()), 
+  // Set to 'now'
+  setup_test_values( date2unixtime(new Date()),
                      date2unixtime(new Date()));
   tests_run++;
 
@@ -347,7 +369,7 @@ fs.utime(file_path, atime_req, mtime_req, function(err){
     expect_ok('utime', file_path, err);
     if (debug_me) debug_show_times_long();
 
-    // Use wrong filename to get 'ENOENT' error                   
+    // Use wrong filename to get 'ENOENT' error
     setup_test_values( date2unixtime(new Date('1999-01-01 01:01:00 UTC')),
                        date2unixtime(new Date('1999-01-01 01:01:01 UTC')));
     tests_run++;

@@ -1,10 +1,11 @@
+"use strict";
 
 // Test these APIs as published in extension module 'fs-ext'
 //
 // fs.flock(fd, flags, [callback])
 //
-// Asynchronous flock(2).  No arguments other than a possible error are 
-// passed to the callback.  Flags can be 'sh', 'ex', 'shnb', 'exnb', 'un' 
+// Asynchronous flock(2).  No arguments other than a possible error are
+// passed to the callback.  Flags can be 'sh', 'ex', 'shnb', 'exnb', 'un'
 // and correspond to the various LOCK_SH, LOCK_EX, LOCK_SH|LOCK_NB, etc.
 //
 // fs.flockSync(fd, flags)
@@ -23,22 +24,21 @@
 //  console.log( require.resolve('../fs-ext'));
 
 var assert = require('assert'),
-    path   = require('path'),
-    util   = require('util'),
-    fs     = require('../fs-ext');
+  path   = require('path'),
+  util   = require('util'),
+  fs     = require('../fs-ext');
 
 var tests_ok  = 0,
-    tests_run = 0;
+  tests_run = 0;
 
-var debug_me = true;
-    debug_me = false;
+var debug_me = false;
 
 var tmp_dir = "/tmp",
-    file_path     = path.join(tmp_dir, 'what.when.flock.test'),
-    file_path_not = path.join(tmp_dir, 'what.not.flock.test');
+  file_path     = path.join(tmp_dir, 'what.when.flock.test'),
+  file_path_not = path.join(tmp_dir, 'what.not.flock.test');
 
 var file_fd,
-    err;
+  err;
 
 
 // Report on test results -  -  -  -  -  -  -  -  -  -  -  -
@@ -48,7 +48,8 @@ process.addListener('exit', function() {
 
   try {
     fs.closeSync(file_fd);
-  } catch (e) {
+  }
+  catch (e) {
     // might not be open, that's okay.
   }
 
@@ -64,7 +65,8 @@ process.addListener('exit', function() {
 function remove_file_wo_error(file_path) {
   try {
     fs.unlinkSync(file_path);
-  } catch (e) {
+  }
+  catch (e) {
     // might not exist, that's okay.
   }
 }
@@ -75,15 +77,17 @@ function expect_errno(api_name, resource, err, expected_errno) {
   if (debug_me) console.log('  expected_errno(err): ' + err );
 
   if ( err  &&  err.code !== expected_errno ) {
-      fault_msg = api_name + '(): expected error ' + expected_errno + ', got another error';
-  } else if ( !err ) {
+    fault_msg = api_name + '(): expected error ' + expected_errno + ', got another error';
+  }
+  else if ( !err ) {
     fault_msg = api_name + '(): expected error ' + expected_errno + ', got another error';
   }
 
   if ( ! fault_msg ) {
     tests_ok++;
     if (debug_me) console.log(' FAILED OK: ' + api_name );
-  } else {
+  }
+  else {
     console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
     console.log('   ARGS: ', util.inspect(arguments));
   }
@@ -99,7 +103,8 @@ function expect_ok(api_name, resource, err) {
   if ( ! fault_msg ) {
     tests_ok++;
     if (debug_me) console.log('        OK: ' + api_name );
-  } else {
+  }
+  else {
     console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
     console.log('   ARGS: ', util.inspect(arguments));
   }
@@ -113,21 +118,23 @@ function expect_ok(api_name, resource, err) {
 
 tests_run++;
 if ( typeof fs.flock !== 'function' ) {
-  console.log('fs.flock API is missing'); 
-} else {  
+  console.log('fs.flock API is missing');
+}
+else {
   tests_ok++;
 }
 
 tests_run++;
 if ( typeof fs.flockSync !== 'function' ) {
   console.log('fs.flockSync API is missing');
-} else {  
+}
+else {
   tests_ok++;
 }
 
 
 // If any pre-checks and setup fail, quit before tests
-if ( tests_run !== tests_ok ) {     
+if ( tests_run !== tests_ok ) {
   process.exit(1);
 }
 
@@ -139,18 +146,19 @@ tests_run++;
 try {
   file_fd = fs.openSync(file_path, 'w');
   tests_ok++;
-} catch (e) {
+}
+catch (e) {
   console.log('  Unable to create test data file %j', file_path);
   console.log('    Error was: %j', e);
 }
 
 
-if ( tests_run !== tests_ok ) {     
+if ( tests_run !== tests_ok ) {
   process.exit(1);
 }
 
 
-// Test that constants are published -  -  -  -  -  -  -  - 
+// Test that constants are published -  -  -  -  -  -  -  -
 
 var fs_binding = require('../build/Release/fs-ext');
 
@@ -164,8 +172,9 @@ constant_names.forEach(function(name){
   if ( fs_binding[name] !== undefined  &&
      typeof fs_binding[name] === 'number' ) {
     tests_ok++;
-  } else {
-    console.log('FAILURE: %s is not defined correctly', name);  
+  }
+  else {
+    console.log('FAILURE: %s is not defined correctly', name);
     console.log('  %s    %j    %j', name, fs_binding[name], typeof fs_binding[name]);
   }
 });
@@ -173,57 +182,63 @@ constant_names.forEach(function(name){
 
 // Test bad argument handling   -  -  -  -  -  -  -  -  -  -  -
 
-// fd value is undefined 
+// fd value is undefined
 
 tests_run++;
 try {
   err = fs.flockSync(undefined, 'un');
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 
 if (err) {
   if (debug_me) console.log('    err    %j', err);
   tests_ok++;
-} else {
-  if (debug_me) console.log('    expected error from undefined fd argument');
+}
+else if (debug_me) {
+  console.log('    expected error from undefined fd argument');
 }
 
 
-// fd value is non-number 
+// fd value is non-number
 
 tests_run++;
 try {
   err = fs.flockSync('foo', 'un');
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 
 if (err) {
   if (debug_me) console.log('    err    %j', err);
   tests_ok++;
-} else {
-  if (debug_me) console.log('    expected error from non-numeric fd argument');
+}
+else if (debug_me) {
+  console.log('    expected error from non-numeric fd argument');
 }
 
 
-// fd value is negative 
+// fd value is negative
 
 tests_run++;
 try {
   err = fs.flockSync(-9, 'un');
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 expect_errno('flockSync', -9, err, 'EBADF');
 
 
-// fd value is 'impossible' 
+// fd value is 'impossible'
 
 tests_run++;
 try {
   err = fs.flockSync(98765, 'un');
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 expect_errno('flockSync', 98765, err, 'EBADF');
@@ -236,20 +251,22 @@ expect_errno('flockSync', 98765, err, 'EBADF');
 tests_run++;
 try {
   err = fs.flockSync(file_fd, 'foo');
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 
-//    "message": "Unknown flock flag: foo" 
+//    "message": "Unknown flock flag: foo"
 if (err) {
   if (debug_me) console.log('    err    %j', err);
   tests_ok++;
-} else {
-  if (debug_me) console.log('    expected error from non-numeric fd argument');
+}
+else if (debug_me) {
+  console.log('    expected error from non-numeric fd argument');
 }
 
 
-// Test valid calls: flockSync  -  -  -  -  -  -  -  -  -  - 
+// Test valid calls: flockSync  -  -  -  -  -  -  -  -  -  -
 
 // Flags can be 'sh', 'ex', 'shnb', 'exnb', 'un'.
 
@@ -258,7 +275,8 @@ if (err) {
 tests_run++;
 try {
   err = fs.flockSync(file_fd, 'un');
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 expect_ok('flockSync', file_fd, err);
@@ -269,7 +287,8 @@ expect_ok('flockSync', file_fd, err);
 tests_run++;
 try {
   err = fs.flockSync(file_fd, 'sh');
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 expect_ok('flockSync', file_fd, err);
@@ -277,7 +296,8 @@ expect_ok('flockSync', file_fd, err);
 tests_run++;
 try {
   err = fs.flockSync(file_fd, 'un');
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 expect_ok('flockSync', file_fd, err);
@@ -288,7 +308,8 @@ expect_ok('flockSync', file_fd, err);
 tests_run++;
 try {
   err = fs.flockSync(file_fd, 'ex');
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 expect_ok('flockSync', file_fd, err);
@@ -296,7 +317,8 @@ expect_ok('flockSync', file_fd, err);
 tests_run++;
 try {
   err = fs.flockSync(file_fd, 'un');
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 expect_ok('flockSync', file_fd, err);
@@ -307,7 +329,8 @@ expect_ok('flockSync', file_fd, err);
 tests_run++;
 try {
   err = fs.flockSync(file_fd, 'shnb');
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 expect_ok('flockSync', file_fd, err);
@@ -315,7 +338,8 @@ expect_ok('flockSync', file_fd, err);
 tests_run++;
 try {
   err = fs.flockSync(file_fd, 'un');
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 expect_ok('flockSync', file_fd, err);
@@ -326,7 +350,8 @@ expect_ok('flockSync', file_fd, err);
 tests_run++;
 try {
   err = fs.flockSync(file_fd, 'exnb');
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 expect_ok('flockSync', file_fd, err);
@@ -334,7 +359,8 @@ expect_ok('flockSync', file_fd, err);
 tests_run++;
 try {
   err = fs.flockSync(file_fd, 'un');
-} catch (e) {
+}
+catch (e) {
   err = e;
 }
 expect_ok('flockSync', file_fd, err);
@@ -346,20 +372,21 @@ expect_ok('flockSync', file_fd, err);
 
 
 
-// Test valid calls: flock  -  -  -  -  -  -  -  -  -  -  - 
+// Test valid calls: flock  -  -  -  -  -  -  -  -  -  -  -
 
 // SEEK_SET to 0
 
 tests_run++;
-  tests_run++;
+tests_run++;
 fs.flock(file_fd, 'sh', function(err, extra) {
   expect_ok('flock', file_fd, err);
 
   // After a change to returning arguments to async callback routines,
   //   check that this API still receives only one argument.
   if ( extra === undefined ) {
-        tests_ok++;
-  } else {
+    tests_ok++;
+  }
+  else {
     console.log('  async flock() callback received more than one argument');
   }
 
@@ -371,7 +398,7 @@ fs.flock(file_fd, 'sh', function(err, extra) {
     fs.flock(file_fd, 'un', function(err) {
       expect_ok('flock', file_fd, err);
 
-      // Test invalid calls: flock  -  -  -  -  -  -  -  -  - 
+      // Test invalid calls: flock  -  -  -  -  -  -  -  -  -
 
       // offset value is negative
       tests_run++;
@@ -381,15 +408,17 @@ fs.flock(file_fd, 'sh', function(err, extra) {
           console.log('  unexpected callback from flock() with bad argument');
         });
         err = undefined;
-      } catch (e) {
+      }
+      catch (e) {
         err = e;
       }
-      //    "message": "Unknown flock flag: foo" 
+      //    "message": "Unknown flock flag: foo"
       if (err) {
         if (debug_me) console.log('    err    %j', err);
         tests_ok++;
-      } else {
-        if (debug_me) console.log('  unexpected success  from flock() with bad argument');
+      }
+      else if (debug_me) {
+        console.log('  unexpected success  from flock() with bad argument');
       }
     });
   });
@@ -397,8 +426,8 @@ fs.flock(file_fd, 'sh', function(err, extra) {
 
 
 //------------------------------------------------------------------------------
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-//-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
 //
 // Errors we have seen:
 //
