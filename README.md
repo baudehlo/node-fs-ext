@@ -1,6 +1,10 @@
 fs-ext
 ======
 
+[![Build Status][ci-img]][ci-url]
+[![Coverage Status][cov-img]][cov-url]
+[![Windows Status][ci-win-img]][ci-win-url]
+
 Extras not included in Node's fs module.
 
 Installation
@@ -110,4 +114,9 @@ Synchronous version of utime().  Throws an exception on error.
 
 
 
-
+[ci-img]: https://travis-ci.org/baudehlo/node-fs-ext.svg?branch=master
+[ci-url]: https://travis-ci.org/baudehlo/node-fs-ext
+[cov-img]: https://codecov.io/github/baudehlo/node-fs-ext/coverage.svg
+[cov-url]: https://codecov.io/github/baudehlo/node-fs-ext?branch=master
+[ci-win-img]: https://ci.appveyor.com/api/projects/status/pqbnutckk0n46uc8?svg=true
+[ci-win-url]: https://ci.appveyor.com/project/baudehlo/node-fs-ext/branch/master
