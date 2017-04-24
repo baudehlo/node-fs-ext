@@ -25,7 +25,7 @@
     "install": "node-gyp configure build",
     "test": "./run_tests",
     "lint": "node ./node_modules/eslint/bin/eslint \"*.js\" \"tests/**/*.js\"",
-    "cover": "NODE_ENV=cov ./node_modules/.bin/istanbul cover _mocha"
+    "cover": "NODE_ENV=cov ./node_modules/.bin/istanbul cover ./run_tests"
   },
   "devDependencies": {
       "eslint"                : "^2.13.0"
