@@ -190,6 +190,7 @@ static void EIO_Seek(uv_work_t *req) {
 
 }
 
+extern "C" {
 static void EIO_Fcntl(uv_work_t *req) {
   store_data_t* data = static_cast<store_data_t *>(req->data);
   
@@ -213,6 +214,7 @@ static void EIO_Fcntl(uv_work_t *req) {
   if (result == -1) {
    	data->error = errno;
   }
+}
 }
 
 #ifdef _WIN32
