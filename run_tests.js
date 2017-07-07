@@ -1,7 +1,7 @@
-#!/usr/bin/env node
+"use strict";
 
 if (process.platform !== 'win32') {
-    require('./tests/test-fs-fcntl');
+  require('./tests/test-fs-fcntl');
 }
 
 require('./tests/test-fs-seek');
@@ -12,6 +12,6 @@ require('./tests/test-fs-utime');
 
 // for stress testing only 
 if (process.argv[2] == '--stress') {
-    require('./tests/test-fs-seek_stress');
-    require('./tests/test-fs-flock_stress');
+  require('./tests/test-fs-seek_stress');
+  require('./tests/test-fs-flock_stress');
 }
