@@ -23,7 +23,8 @@
 var assert = require('assert'),
   path   = require('path'),
   util   = require('util'),
-  fs     = require('../fs-ext');
+  fs     = require('../fs-ext'),
+  os     = require('os');
 
 var tests_ok = 0;
 var tests_run = 0;
@@ -31,7 +32,7 @@ var tests_run = 0;
 var debug_me = true;
 debug_me = false;
 
-var tmp_dir = "/tmp",
+var tmp_dir = os.tmpdir(),
   file_path     = path.join(tmp_dir, 'what.when.utime.test'),
   file_path_not = path.join(tmp_dir, 'what.not.utime.test');
 
