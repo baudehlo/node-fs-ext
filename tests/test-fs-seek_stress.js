@@ -83,9 +83,9 @@ function remove_file_wo_error(file_path) {
 function display_memory_usage_now() {
   var usage = process.memoryUsage();
   console.log('    memory:  heapUsed  %d      rss       %d',
-                                usage.heapUsed,  usage.rss);
+    usage.heapUsed,  usage.rss);
   console.log('             heapTotal %d      vsize     %d',
-                                usage.heapTotal, usage.vsize);
+    usage.heapTotal, usage.vsize);
 }
 
 

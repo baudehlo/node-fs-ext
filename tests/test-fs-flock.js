@@ -395,7 +395,8 @@ fs.flock(file_fd, 'sh', function(err, extra) {
     if (process.platform === 'win32') {
       // Windows doesn't support lock upgrades
       expect_errno('flock', 10035, err, 'EWOULDBLOCK');
-    } else {
+    }
+    else {
       expect_ok('flock', file_fd, err);
     }
 

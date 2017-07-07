@@ -37,6 +37,6 @@
     "cover": "NODE_ENV=cov ./node_modules/.bin/istanbul cover ./run_tests"
   },
   "devDependencies": {
-    "eslint": "^2.13.0"
+    "eslint": "^4.1.1"
   }
 }

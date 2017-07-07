@@ -318,8 +318,9 @@ if (debug_me) debug_show_times_long();
 
 // Set to specific values derived from Date()
 
-setup_test_values( date2unixtime(new Date('1999-01-01 01:01:00 UTC')),
-                   date2unixtime(new Date('1999-01-01 01:01:01 UTC')));
+setup_test_values(
+  date2unixtime(new Date('1999-01-01 01:01:00 UTC')),
+  date2unixtime(new Date('1999-01-01 01:01:01 UTC')));
 
 tests_run++;
 result = err = undefined;
@@ -346,7 +347,8 @@ catch (e) {
 }
 if (process.platform === 'win32') {
   expect_errno('utimeSync', err, result, 'EINVAL');
-} else {
+}
+else {
   expect_ok('utimeSync', file_path, err);
   if (debug_me) debug_show_times_long();
 }
@@ -355,8 +357,9 @@ if (process.platform === 'win32') {
 // Begin tests for utime()
 
 // Set to a specific Date value
-setup_test_values( date2unixtime(new Date('1999-02-02 02:02:00 UTC')),
-                   date2unixtime(new Date('1999-02-02 02:02:01 UTC')));
+setup_test_values(
+  date2unixtime(new Date('1999-02-02 02:02:00 UTC')),
+  date2unixtime(new Date('1999-02-02 02:02:01 UTC')));
 tests_run++;
 
 fs.utime(file_path, atime_req, mtime_req, function(err){
@@ -364,8 +367,9 @@ fs.utime(file_path, atime_req, mtime_req, function(err){
   if (debug_me) debug_show_times_long();
 
   // Set to 'now'
-  setup_test_values( date2unixtime(new Date()),
-                     date2unixtime(new Date()));
+  setup_test_values(
+    date2unixtime(new Date()),
+    date2unixtime(new Date()));
   tests_run++;
 
   fs.utime(file_path, atime_req, mtime_req, function(err){
@@ -373,8 +377,9 @@ fs.utime(file_path, atime_req, mtime_req, function(err){
     if (debug_me) debug_show_times_long();
 
     // Use wrong filename to get 'ENOENT' error
-    setup_test_values( date2unixtime(new Date('1999-01-01 01:01:00 UTC')),
-                       date2unixtime(new Date('1999-01-01 01:01:01 UTC')));
+    setup_test_values(
+      date2unixtime(new Date('1999-01-01 01:01:00 UTC')),
+      date2unixtime(new Date('1999-01-01 01:01:01 UTC')));
     tests_run++;
 
     fs.utime(file_path_not, atime_req, mtime_req, function(err){

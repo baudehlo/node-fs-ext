@@ -87,9 +87,9 @@ function date2unixtime(date_val) {
 function display_memory_usage_now() {
   var usage = process.memoryUsage();
   console.log('    memory:  heapUsed  %d      rss       %d',
-                                usage.heapUsed,  usage.rss);
+    usage.heapUsed,  usage.rss);
   console.log('             heapTotal %d      vsize     %d',
-                                usage.heapTotal, usage.vsize);
+    usage.heapTotal, usage.vsize);
 }
 
 
@@ -230,7 +230,7 @@ if ( 1 ) {
       err = e;
     }
     expect_errno('utimeSync', err, result, 'ENOENT');
-////tests_ok++;
+    ////tests_ok++;
   }
 
   console.log('  After %d calls to failing utimeSync():', how_many_times);

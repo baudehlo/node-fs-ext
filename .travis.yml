@@ -4,9 +4,10 @@ notifications:
 language: node_js
 dist: trusty
 node_js:
-    - "0.10.45"
-    - "7"
+    - "0.12"
+    - "4"
     - "6"
+    - "8"
 script:
     - npm run lint
     - npm test
