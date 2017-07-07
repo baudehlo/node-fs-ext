@@ -18,7 +18,9 @@
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <node.h>
+#ifndef _WIN32
 #include <fcntl.h>
+#endif
 #include <errno.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -87,7 +89,9 @@ enum
   FS_OP_SEEK,
   FS_OP_UTIME,
   FS_OP_STATVFS,
+#ifndef _WIN32
   FS_OP_FCNTL,
+#endif
 };
 
 static void EIO_After(uv_work_t *req) {
@@ -139,10 +143,12 @@ static void EIO_After(uv_work_t *req) {
         argc = 1;
 #endif
         break;
+#ifndef _WIN32
       case FS_OP_FCNTL:
         argc = 2;
         argv[1] = Nan::New<Number>(store_data->result);
         break;
+#endif
       default:
         assert(0 && "Unhandled op type value");
     }
@@ -190,6 +196,7 @@ static void EIO_Seek(uv_work_t *req) {
 
 }
 
+#ifndef _WIN32
 static void EIO_Fcntl(uv_work_t *req) {
   store_data_t* data = static_cast<store_data_t *>(req->data);
   
@@ -214,6 +221,7 @@ static void EIO_Fcntl(uv_work_t *req) {
    	data->error = errno;
   }
 }
+#endif
 
 #ifdef _WIN32
 
@@ -231,9 +239,11 @@ static int _win32_flock(int fd, int oper) {
 
   int i = -1;
 
-  fh = (HANDLE)_get_osfhandle(fd);
-  if (fh == (HANDLE)-1)
+  fh = (HANDLE)uv_get_osfhandle(fd);
+  if (fh == (HANDLE)-1) {
+    errno = EBADF;
     return -1;
+  }
 
   memset(&o, 0, sizeof(o));
 
@@ -256,7 +266,8 @@ static int _win32_flock(int fd, int oper) {
         i = 0;
       break;
   case LOCK_UN:               /* unlock lock */
-      if (UnlockFileEx(fh, 0, LK_LEN, 0, &o))
+      if (UnlockFileEx(fh, 0, LK_LEN, 0, &o) ||
+          GetLastError() == ERROR_NOT_LOCKED)
         i = 0;
       break;
   default:                    /* unknown */
@@ -264,8 +275,9 @@ static int _win32_flock(int fd, int oper) {
       return -1;
   }
   if (i == -1) {
-    if (GetLastError() == ERROR_LOCK_VIOLATION)
-      errno = WSAEWOULDBLOCK;
+    if (GetLastError() == ERROR_LOCK_VIOLATION) {
+      errno = EWOULDBLOCK;
+      }
     else
       errno = EINVAL;
   }
@@ -375,6 +387,7 @@ static NAN_METHOD(Seek) {
 
 //  fs.fcntl(fd, cmd, [arg])
 
+#ifndef _WIN32
 static NAN_METHOD(Fcntl) {
   if (info.Length() < 3 ||
      !info[0]->IsInt32() ||
@@ -408,7 +421,7 @@ static NAN_METHOD(Fcntl) {
 
   info.GetReturnValue().SetUndefined();
 }
-
+#endif
 
 static void EIO_UTime(uv_work_t *req) {
   store_data_t* utime_data = static_cast<store_data_t *>(req->data);
@@ -589,7 +602,9 @@ NAN_MODULE_INIT(init)
   NODE_DEFINE_CONSTANT(target, F_SETLKW);
 #endif
   target->Set(Nan::New<String>("seek").ToLocalChecked(), Nan::New<FunctionTemplate>(Seek)->GetFunction());
+#ifndef _WIN32
   target->Set(Nan::New<String>("fcntl").ToLocalChecked(), Nan::New<FunctionTemplate>(Fcntl)->GetFunction());
+#endif
   target->Set(Nan::New<String>("flock").ToLocalChecked(), Nan::New<FunctionTemplate>(Flock)->GetFunction());
   target->Set(Nan::New<String>("utime").ToLocalChecked(), Nan::New<FunctionTemplate>(UTime)->GetFunction());
   target->Set(Nan::New<String>("statVFS").ToLocalChecked(), Nan::New<FunctionTemplate>(StatVFS)->GetFunction());
