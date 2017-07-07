@@ -114,7 +114,7 @@ function expect_value(api_name, err, value_seen, value_expected) {
     if (debug_me) console.log('        OK: %s() returned ', api_name, value_seen);
   }
   else {
-    console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
+    console.log('FAILURE: ' + fault_msg);
     console.log('   ARGS: ', util.inspect(arguments));
   }
 }
@@ -151,8 +151,8 @@ function expect_errno(api_name, err, value_seen, expected_errno) {
     if (debug_me) console.log(' FAILED OK: ' + api_name );
   }
   else {
-    console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
-    if (debug_me) console.log('   ARGS: ', util.inspect(arguments));
+    console.log('FAILURE: ' + fault_msg);
+    console.log('   ARGS: ', util.inspect(arguments));
   }
 }
 

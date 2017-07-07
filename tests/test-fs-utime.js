@@ -117,8 +117,8 @@ function expect_ok(api_name, resource, err) {
   }
   else {
     //XXX Create array from arguments adding xtime_req, xtime_seen to end?
-    console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
-    //if (debug_me) console.log('   ARGS: ', util.inspect(arguments));
+    console.log('FAILURE: ' + fault_msg);
+    console.log('   ARGS: ', util.inspect(arguments));
   }
 }
 
@@ -154,8 +154,8 @@ function expect_errno(api_name, err, value_seen, expected_errno) {
     if (debug_me) console.log(' FAILED OK: ' + api_name );
   }
   else {
-    console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
-    //if (debug_me) console.log('   ARGS: ', util.inspect(arguments));
+    console.log('FAILURE: ' + fault_msg);
+    console.log('   ARGS: ', util.inspect(arguments));
   }
 }
 
@@ -344,9 +344,12 @@ try {
 catch (e) {
   err = e;
 }
-expect_ok('utimeSync', file_path, err);
-if (debug_me) debug_show_times_long();
-
+if (process.platform === 'win32') {
+  expect_errno('utimeSync', err, result, 'EINVAL');
+} else {
+  expect_ok('utimeSync', file_path, err);
+  if (debug_me) debug_show_times_long();
+}
 
 
 // Begin tests for utime()

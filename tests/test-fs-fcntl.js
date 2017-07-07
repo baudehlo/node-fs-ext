@@ -70,7 +70,7 @@ function expect_errno(api_name, resource, err, expected_errno) {
     if (debug_me) console.log(' FAILED OK: ' + api_name );
   }
   else {
-    console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
+    console.log('FAILURE: ' + fault_msg);
     console.log('   ARGS: ', util.inspect(arguments));
   }
 }
@@ -87,7 +87,7 @@ function expect_ok(api_name, resource, err) {
     if (debug_me) console.log('        OK: ' + api_name );
   }
   else {
-    console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
+    console.log('FAILURE: ' + fault_msg);
     console.log('   ARGS: ', util.inspect(arguments));
   }
 }

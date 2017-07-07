@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
-require('./tests/test-fs-fcntl');
+if (process.platform !== 'win32') {
+    require('./tests/test-fs-fcntl');
+}
 
 require('./tests/test-fs-seek');
 
