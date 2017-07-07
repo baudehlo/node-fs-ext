@@ -16,7 +16,7 @@
   },
   "main": "fs-ext.js",
   "engines": {
-    "node": ">= v0.8.0"
+    "node": ">= 6.0.0"
   },
   "dependencies": {
     "nan": "^2.0"

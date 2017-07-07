@@ -4,8 +4,6 @@ notifications:
 language: node_js
 dist: trusty
 node_js:
-    - "0.12"
-    - "4"
     - "6"
     - "8"
 script:
