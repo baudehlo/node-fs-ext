@@ -26,14 +26,15 @@
 var assert = require('assert'),
   path   = require('path'),
   util   = require('util'),
-  fs     = require('../fs-ext');
+  fs     = require('../fs-ext'),
+  os     = require('os');
 
 var tests_ok  = 0,
   tests_run = 0;
 
 var debug_me = false;
 
-var tmp_dir = "/tmp",
+var tmp_dir = os.tmpdir(),
   file_path     = path.join(tmp_dir, 'what.when.flock.test'),
   file_path_not = path.join(tmp_dir, 'what.not.flock.test');
 
@@ -88,7 +89,7 @@ function expect_errno(api_name, resource, err, expected_errno) {
     if (debug_me) console.log(' FAILED OK: ' + api_name );
   }
   else {
-    console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
+    console.log('FAILURE: ' + fault_msg);
     console.log('   ARGS: ', util.inspect(arguments));
   }
 }
@@ -105,7 +106,7 @@ function expect_ok(api_name, resource, err) {
     if (debug_me) console.log('        OK: ' + api_name );
   }
   else {
-    console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
+    console.log('FAILURE: ' + fault_msg);
     console.log('   ARGS: ', util.inspect(arguments));
   }
 }
@@ -392,7 +393,13 @@ fs.flock(file_fd, 'sh', function(err, extra) {
 
   tests_run++;
   fs.flock(file_fd, 'exnb', function(err) {
-    expect_ok('flock', file_fd, err);
+    if (process.platform === 'win32') {
+      // Windows doesn't support lock upgrades
+      expect_errno('flock', 10035, err, 'EWOULDBLOCK');
+    }
+    else {
+      expect_ok('flock', file_fd, err);
+    }
 
     tests_run++;
     fs.flock(file_fd, 'un', function(err) {

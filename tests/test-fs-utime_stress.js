@@ -23,7 +23,8 @@
 var assert = require('assert'),
   path   = require('path'),
   util   = require('util'),
-  fs     = require('../fs-ext');
+  fs     = require('../fs-ext'),
+  os     = require('os');
 
 var tests_ok = 0;
 var tests_run = 0;
@@ -31,7 +32,7 @@ var tests_run = 0;
 var debug_me = true;
 debug_me = false;
 
-var tmp_dir = "/tmp",
+var tmp_dir = os.tmpdir(),
   file_path     = path.join(tmp_dir, 'what.when.utime.test'),
   file_path_not = path.join(tmp_dir, 'what.not.utime.test');
 
@@ -87,9 +88,9 @@ function date2unixtime(date_val) {
 function display_memory_usage_now() {
   var usage = process.memoryUsage();
   console.log('    memory:  heapUsed  %d      rss       %d',
-                                usage.heapUsed,  usage.rss);
+    usage.heapUsed,  usage.rss);
   console.log('             heapTotal %d      vsize     %d',
-                                usage.heapTotal, usage.vsize);
+    usage.heapTotal, usage.vsize);
 }
 
 
@@ -114,7 +115,7 @@ function expect_value(api_name, err, value_seen, value_expected) {
     if (debug_me) console.log('        OK: %s() returned ', api_name, value_seen);
   }
   else {
-    console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
+    console.log('FAILURE: ' + fault_msg);
     console.log('   ARGS: ', util.inspect(arguments));
   }
 }
@@ -151,8 +152,8 @@ function expect_errno(api_name, err, value_seen, expected_errno) {
     if (debug_me) console.log(' FAILED OK: ' + api_name );
   }
   else {
-    console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
-    if (debug_me) console.log('   ARGS: ', util.inspect(arguments));
+    console.log('FAILURE: ' + fault_msg);
+    console.log('   ARGS: ', util.inspect(arguments));
   }
 }
 
@@ -230,7 +231,7 @@ if ( 1 ) {
       err = e;
     }
     expect_errno('utimeSync', err, result, 'ENOENT');
-////tests_ok++;
+    ////tests_ok++;
   }
 
   console.log('  After %d calls to failing utimeSync():', how_many_times);

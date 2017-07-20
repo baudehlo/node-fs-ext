@@ -2,7 +2,12 @@
   "author": "Matt Sergeant <helpme@gmail.com> (http://baudehlo.wordpress.com/)",
   "name": "fs-ext",
   "description": "Extensions to core 'fs' module.",
-  "keywords": ["fs", "filesystem", "flock", "seek"],
+  "keywords": [
+    "fs",
+    "filesystem",
+    "flock",
+    "seek"
+  ],
   "version": "0.6.0",
   "homepage": "https://github.com/baudehlo/node-fs-ext/",
   "repository": {
@@ -11,23 +16,27 @@
   },
   "main": "fs-ext.js",
   "engines": {
-    "node": ">= v0.8.0"
+    "node": ">= 6.0.0"
   },
-  "dependencies": { "nan": "^2.0" },
-  "licenses": [ {
-    "type": "MIT"
-  } ],
+  "dependencies": {
+    "nan": "^2.0"
+  },
+  "licenses": [
+    {
+      "type": "MIT"
+    }
+  ],
   "bugs": {
-    "mail" : "helpme@gmail.com",
-    "web" : "https://github.com/baudehlo/node-fs-ext/issues"
+    "mail": "helpme@gmail.com",
+    "web": "https://github.com/baudehlo/node-fs-ext/issues"
   },
-  "scripts": { 
+  "scripts": {
     "install": "node-gyp configure build",
-    "test": "./run_tests",
+    "test": "node ./run_tests",
     "lint": "node ./node_modules/eslint/bin/eslint \"*.js\" \"tests/**/*.js\"",
-    "cover": "NODE_ENV=cov ./node_modules/.bin/istanbul cover ./run_tests"
+    "cover": "NODE_ENV=cov ./node_modules/.bin/istanbul cover node ./run_tests"
   },
   "devDependencies": {
-      "eslint"                : "^2.13.0"
+    "eslint": "^2.13.0"
   }
 }

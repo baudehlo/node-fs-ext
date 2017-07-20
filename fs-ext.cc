@@ -18,7 +18,9 @@
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <node.h>
+#ifndef _WIN32
 #include <fcntl.h>
+#endif
 #include <errno.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -37,6 +39,8 @@
 #include <io.h>
 #include <windows.h>
 #include <sys/utime.h>
+#define off_t LONGLONG
+#define _LARGEFILE_SOURCE
 #endif
 
 using namespace v8;
@@ -87,7 +91,9 @@ enum
   FS_OP_SEEK,
   FS_OP_UTIME,
   FS_OP_STATVFS,
+#ifndef _WIN32
   FS_OP_FCNTL,
+#endif
 };
 
 static void EIO_After(uv_work_t *req) {
@@ -119,7 +125,7 @@ static void EIO_After(uv_work_t *req) {
 
       case FS_OP_SEEK:
         argc = 2;
-        argv[1] = Nan::New<Number>(store_data->offset);
+        argv[1] = Nan::New<Number>(static_cast<double>(store_data->offset));
         break;
       case FS_OP_STATVFS:
 #ifndef _WIN32
@@ -139,10 +145,12 @@ static void EIO_After(uv_work_t *req) {
         argc = 1;
 #endif
         break;
+#ifndef _WIN32
       case FS_OP_FCNTL:
         argc = 2;
         argv[1] = Nan::New<Number>(store_data->result);
         break;
+#endif
       default:
         assert(0 && "Unhandled op type value");
     }
@@ -176,10 +184,53 @@ static void EIO_StatVFS(uv_work_t *req) {
   ;
 }
 
+#ifdef _WIN32
+static off_t _win32_lseek(int fd, off_t offset, int whence) {
+  HANDLE fh;
+  LARGE_INTEGER new_offset;
+
+  fh = (HANDLE)uv_get_osfhandle(fd);
+  if (fh == (HANDLE)-1) {
+    errno = EBADF;
+    return -1;
+  }
+
+  DWORD method;
+  switch (whence) {
+  case SEEK_SET:
+      method = FILE_BEGIN;
+      break;
+  case SEEK_CUR:
+      method = FILE_CURRENT;
+      break;
+  case SEEK_END:
+      method = FILE_END;
+      break;
+  default:
+      errno = EINVAL;
+      return -1;
+  }
+
+  LARGE_INTEGER distance;
+  distance.QuadPart = offset;
+
+  if (SetFilePointerEx(fh, distance, &new_offset, method)) {
+    return new_offset.QuadPart;
+  }
+
+  errno = EINVAL;
+  return -1;
+}
+#endif
+
 static void EIO_Seek(uv_work_t *req) {
   store_data_t* seek_data = static_cast<store_data_t *>(req->data);
 
+#ifdef _WIN32
+  off_t offs = _win32_lseek(seek_data->fd, seek_data->offset, seek_data->oper);
+#else
   off_t offs = lseek(seek_data->fd, seek_data->offset, seek_data->oper);
+#endif
 
   if (offs == -1) {
     seek_data->result = -1;
@@ -190,6 +241,7 @@ static void EIO_Seek(uv_work_t *req) {
 
 }
 
+#ifndef _WIN32
 static void EIO_Fcntl(uv_work_t *req) {
   store_data_t* data = static_cast<store_data_t *>(req->data);
   
@@ -214,6 +266,7 @@ static void EIO_Fcntl(uv_work_t *req) {
    	data->error = errno;
   }
 }
+#endif
 
 #ifdef _WIN32
 
@@ -231,9 +284,11 @@ static int _win32_flock(int fd, int oper) {
 
   int i = -1;
 
-  fh = (HANDLE)_get_osfhandle(fd);
-  if (fh == (HANDLE)-1)
+  fh = (HANDLE)uv_get_osfhandle(fd);
+  if (fh == (HANDLE)-1) {
+    errno = EBADF;
     return -1;
+  }
 
   memset(&o, 0, sizeof(o));
 
@@ -256,7 +311,8 @@ static int _win32_flock(int fd, int oper) {
         i = 0;
       break;
   case LOCK_UN:               /* unlock lock */
-      if (UnlockFileEx(fh, 0, LK_LEN, 0, &o))
+      if (UnlockFileEx(fh, 0, LK_LEN, 0, &o) ||
+          GetLastError() == ERROR_NOT_LOCKED)
         i = 0;
       break;
   default:                    /* unknown */
@@ -264,8 +320,8 @@ static int _win32_flock(int fd, int oper) {
       return -1;
   }
   if (i == -1) {
-    if (GetLastError() == ERROR_LOCK_VIOLATION)
-      errno = WSAEWOULDBLOCK;
+    if (GetLastError() == ERROR_LOCK_VIOLATION) 
+      errno = EWOULDBLOCK;
     else
       errno = EINVAL;
   }
@@ -352,9 +408,13 @@ static NAN_METHOD(Seek) {
   int whence = info[2]->Int32Value();
 
   if ( ! info[3]->IsFunction()) {
+#ifdef _WIN32
+    off_t offs_result = _win32_lseek(fd, offs, whence);
+#else
     off_t offs_result = lseek(fd, offs, whence);
+#endif
     if (offs_result == -1) return Nan::ThrowError(Nan::ErrnoException(errno, "Seek", ""));
-    info.GetReturnValue().Set(Nan::New<Number>(offs_result));
+    info.GetReturnValue().Set(Nan::New<Number>(static_cast<double>(offs_result)));
     return;
   }
 
@@ -375,6 +435,7 @@ static NAN_METHOD(Seek) {
 
 //  fs.fcntl(fd, cmd, [arg])
 
+#ifndef _WIN32
 static NAN_METHOD(Fcntl) {
   if (info.Length() < 3 ||
      !info[0]->IsInt32() ||
@@ -408,12 +469,12 @@ static NAN_METHOD(Fcntl) {
 
   info.GetReturnValue().SetUndefined();
 }
-
+#endif
 
 static void EIO_UTime(uv_work_t *req) {
   store_data_t* utime_data = static_cast<store_data_t *>(req->data);
 
-  off_t i = utime(utime_data->path, &utime_data->utime_buf);
+  int i = utime(utime_data->path, &utime_data->utime_buf);
   free( utime_data->path );
 
   if (i == (off_t)-1) {
@@ -589,7 +650,9 @@ NAN_MODULE_INIT(init)
   NODE_DEFINE_CONSTANT(target, F_SETLKW);
 #endif
   target->Set(Nan::New<String>("seek").ToLocalChecked(), Nan::New<FunctionTemplate>(Seek)->GetFunction());
+#ifndef _WIN32
   target->Set(Nan::New<String>("fcntl").ToLocalChecked(), Nan::New<FunctionTemplate>(Fcntl)->GetFunction());
+#endif
   target->Set(Nan::New<String>("flock").ToLocalChecked(), Nan::New<FunctionTemplate>(Flock)->GetFunction());
   target->Set(Nan::New<String>("utime").ToLocalChecked(), Nan::New<FunctionTemplate>(UTime)->GetFunction());
   target->Set(Nan::New<String>("statVFS").ToLocalChecked(), Nan::New<FunctionTemplate>(StatVFS)->GetFunction());

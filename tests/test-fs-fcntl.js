@@ -9,14 +9,15 @@
 var assert = require('assert'),
   path   = require('path'),
   util   = require('util'),
-  fs     = require('../fs-ext');
+  fs     = require('../fs-ext'),
+  os     = require('os');
 
 var tests_ok  = 0,
   tests_run = 0;
 
 var debug_me = false;
 
-var tmp_dir = "/tmp",
+var tmp_dir = os.tmpdir(),
   file_path     = path.join(tmp_dir, 'what.when.fcntl.test');
 
 var file_fd,
@@ -70,7 +71,7 @@ function expect_errno(api_name, resource, err, expected_errno) {
     if (debug_me) console.log(' FAILED OK: ' + api_name );
   }
   else {
-    console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
+    console.log('FAILURE: ' + fault_msg);
     console.log('   ARGS: ', util.inspect(arguments));
   }
 }
@@ -87,7 +88,7 @@ function expect_ok(api_name, resource, err) {
     if (debug_me) console.log('        OK: ' + api_name );
   }
   else {
-    console.log('FAILURE: ' + arguments.callee.name + ': ' + fault_msg);
+    console.log('FAILURE: ' + fault_msg);
     console.log('   ARGS: ', util.inspect(arguments));
   }
 }
