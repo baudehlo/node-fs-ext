@@ -31,14 +31,12 @@
 #ifndef _WIN32
 #include <sys/file.h>
 #include <unistd.h>
-#include <utime.h>
 #include <sys/statvfs.h>
 #endif
 
 #ifdef _WIN32
 #include <io.h>
 #include <windows.h>
-#include <sys/utime.h>
 #define off_t LONGLONG
 #define _LARGEFILE_SOURCE
 #endif
@@ -55,7 +53,6 @@ struct store_data_t {
   int oper;
   int arg;
   off_t offset;
-  struct utimbuf utime_buf;
 #ifndef _WIN32
   struct statvfs statvfs_buf;
 #endif
@@ -89,7 +86,6 @@ enum
 {
   FS_OP_FLOCK,
   FS_OP_SEEK,
-  FS_OP_UTIME,
   FS_OP_STATVFS,
 #ifndef _WIN32
   FS_OP_FCNTL,
@@ -119,7 +115,6 @@ static void EIO_After(uv_work_t *req) {
     switch (store_data->fs_op) {
       // These operations have no data to pass other than "error".
       case FS_OP_FLOCK:
-      case FS_OP_UTIME:
         argc = 1;
         break;
 
@@ -471,63 +466,6 @@ static NAN_METHOD(Fcntl) {
 }
 #endif
 
-static void EIO_UTime(uv_work_t *req) {
-  store_data_t* utime_data = static_cast<store_data_t *>(req->data);
-
-  int i = utime(utime_data->path, &utime_data->utime_buf);
-  free( utime_data->path );
-
-  if (i == (off_t)-1) {
-    utime_data->result = -1;
-    utime_data->error = errno;
-  } else {
-    utime_data->result = i;
-  }
-
-}
-
-// Wrapper for utime(2).
-//   fs.utime( path, atime, mtime, [callback] )
-
-static NAN_METHOD(UTime) {
-  if (info.Length() < 3 ||
-      info.Length() > 4 ||
-      !info[0]->IsString() ||
-      !info[1]->IsNumber() ||
-      !info[2]->IsNumber() ) {
-    return THROW_BAD_ARGS;
-  }
-
-  String::Utf8Value path(info[0]->ToString());
-  time_t atime = info[1]->IntegerValue();
-  time_t mtime = info[2]->IntegerValue();
-
-  // Synchronous call needs much less work
-  if ( ! info[3]->IsFunction()) {
-    struct utimbuf buf;
-    buf.actime  = atime;
-    buf.modtime = mtime;
-    int ret = utime(*path, &buf);
-    if (ret != 0) return Nan::ThrowError(Nan::ErrnoException(errno, "utime", "", *path));
-    info.GetReturnValue().SetUndefined();
-    return;
-  }
-
-  store_data_t* utime_data = new store_data_t();
-
-  utime_data->cb = new Nan::Callback((Local<Function>) info[3].As<Function>());
-  utime_data->fs_op = FS_OP_UTIME;
-  utime_data->path = strdup(*path);
-  utime_data->utime_buf.actime  = atime;
-  utime_data->utime_buf.modtime = mtime;
-
-  uv_work_t *req = new uv_work_t;
-  req->data = utime_data;
-  uv_queue_work(uv_default_loop(), req, EIO_UTime, (uv_after_work_cb)EIO_After);
-
-  info.GetReturnValue().SetUndefined();
-}
-
 // Wrapper for statvfs(2).
 //   fs.statVFS( path, [callback] )
 
@@ -654,7 +592,6 @@ NAN_MODULE_INIT(init)
   target->Set(Nan::New<String>("fcntl").ToLocalChecked(), Nan::New<FunctionTemplate>(Fcntl)->GetFunction());
 #endif
   target->Set(Nan::New<String>("flock").ToLocalChecked(), Nan::New<FunctionTemplate>(Flock)->GetFunction());
-  target->Set(Nan::New<String>("utime").ToLocalChecked(), Nan::New<FunctionTemplate>(UTime)->GetFunction());
   target->Set(Nan::New<String>("statVFS").ToLocalChecked(), Nan::New<FunctionTemplate>(StatVFS)->GetFunction());
 
 #ifndef _WIN32

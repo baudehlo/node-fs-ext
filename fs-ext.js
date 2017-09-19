@@ -125,33 +125,6 @@ exports.seekSync = function(fd, position, whence) {
   return binding.seek(fd, position, whence);
 };
 
-
-// fs.utime('foo' [, atime, mtime] [, func] )
-
-exports.utime = function(path, atime, mtime, callback) {
-  callback = arguments[arguments.length - 1];
-  if (typeof(callback) !== 'function') {
-    callback = noop;
-  }
-
-  if (typeof(atime) !== 'number'  &&  typeof(mtime) !== 'number') {
-    atime = mtime = Date.now() / 1000;
-  }
-
-  binding.utime(path, atime, mtime, callback);
-};
-
-// fs.utimeSync('foo' [, atime, mtime] )
-
-exports.utimeSync = function(path, atime, mtime) {
-
-  if (typeof(atime) !== 'number'  &&  typeof(mtime) !== 'number') {
-    atime = mtime = Date.now() / 1000;
-  }
-
-  return binding.utime(path, atime, mtime);
-};
-
 exports.statVFS = function(path, callback) {
   path = path || '/';
   return binding.statVFS(path, callback);

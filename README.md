@@ -7,6 +7,9 @@ fs-ext
 
 Extras not included in Node's fs module.
 
+**Note**: From v1.0.0 onwards, fs.utime and fs.utimeSync have been removed.
+Use fs.utimes and fs.utimesSync instead.
+
 Installation
 ------------
 
@@ -95,22 +98,6 @@ plus offset bytes (usually negative or zero to seek to the end of the file).
 
 Synchronous lseek(2). Throws an exception on error.  Returns current
 file position.
-
-
-### fs.utime(path [, atime, mtime] [, callback])
-
-Asynchronous utime(2).
-
-Arguments `atime` and `mtime` are in seconds as for the system call.  Note
-that the number value of Date() is in milliseconds, so to use the 'now'
-value with `fs.utime()` you would have to divide by 1000 first, e.g. 
-Date.now()/1000
-
-Just like for utime(2), the absence of the `atime` and `mtime` means 'now'.
-
-### fs.utimeSync(path [, atime, mtime])
-
-Synchronous version of utime().  Throws an exception on error.
 
 
 

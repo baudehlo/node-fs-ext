@@ -8,8 +8,6 @@ require('./tests/test-fs-seek');
 
 require('./tests/test-fs-flock');
 
-require('./tests/test-fs-utime');
-
 // for stress testing only
 if (process.argv[2] == '--stress') {
   require('./tests/test-fs-seek_stress');
