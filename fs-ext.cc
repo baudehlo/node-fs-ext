@@ -153,7 +153,7 @@ static void EIO_After(uv_work_t *req) {
 
   Nan::TryCatch try_catch;
 
-  store_data->cb->Call(argc, argv);
+  Nan::Call(*store_data->cb, argc, argv);
 
   if (try_catch.HasCaught()) {
     Nan::FatalException(try_catch);
@@ -475,7 +475,7 @@ static NAN_METHOD(StatVFS) {
     return THROW_BAD_ARGS;
   }
 
-  String::Utf8Value path(info[0]->ToString());
+  Nan::Utf8String path(info[0]->ToString());
 
   // Synchronous call needs much less work
   if (!info[1]->IsFunction()) {
