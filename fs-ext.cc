@@ -153,7 +153,8 @@ static void EIO_After(uv_work_t *req) {
 
   Nan::TryCatch try_catch;
 
-  Nan::Call(*store_data->cb, argc, argv);
+  Nan::AsyncResource async_resource("fs-ext:EIO_After");
+  store_data->cb->Call(argc, argv, &async_resource);
 
   if (try_catch.HasCaught()) {
     Nan::FatalException(try_catch);
