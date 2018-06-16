@@ -8,7 +8,7 @@
     "flock",
     "seek"
   ],
-  "version": "1.2.0",
+  "version": "1.2.1",
   "homepage": "https://github.com/baudehlo/node-fs-ext/",
   "repository": {
     "type": "git",
