@@ -347,8 +347,8 @@ static NAN_METHOD(Flock) {
   store_data_t* flock_data = new store_data_t();
 
   flock_data->fs_op = FS_OP_FLOCK;
-  flock_data->fd = info[0]->Int32Value();
-  flock_data->oper = info[1]->Int32Value();
+  flock_data->fd = info[0].As<v8::Int32>()->Value();
+  flock_data->oper = info[1].As<v8::Int32>()->Value();
 
   if (info[2]->IsFunction()) {
     flock_data->cb = new Nan::Callback((Local<Function>) info[2].As<Function>());
@@ -380,13 +380,13 @@ static inline int IsInt64(double x) {
   if (!(a)->IsUndefined() && !(a)->IsNull() && !(a)->IsInt32()) { \
     return Nan::ThrowTypeError("Not an integer"); \
   }
-#define GET_OFFSET(a) ((a)->IsNumber() ? (a)->Int32Value() : -1)
+#define GET_OFFSET(a) ((a)->IsInt32() ? (a).As<v8::Int32>()->Value() : -1)
 #else
 #define ASSERT_OFFSET(a) \
-  if (!(a)->IsUndefined() && !(a)->IsNull() && !IsInt64((a)->NumberValue())) { \
+  if (!(a)->IsUndefined() && !(a)->IsNull() && !((a)->IsNumber() && IsInt64((a).As<v8::Number>()->Value()))) { \
     return Nan::ThrowTypeError("Not an integer"); \
   }
-#define GET_OFFSET(a) ((a)->IsNumber() ? (a)->IntegerValue() : -1)
+#define GET_OFFSET(a) ((a)->IsNumber() ? static_cast<int64_t>((a).As<v8::Number>()->Value()) : -1)
 #endif
 
 //  fs.seek(fd, position, whence [, callback] )
@@ -398,10 +398,10 @@ static NAN_METHOD(Seek) {
     return THROW_BAD_ARGS;
   }
 
-  int fd = info[0]->Int32Value();
+  int fd = info[0].As<v8::Int32>()->Value();
   ASSERT_OFFSET(info[1]);
   off_t offs = GET_OFFSET(info[1]);
-  int whence = info[2]->Int32Value();
+  int whence = info[2].As<v8::Int32>()->Value();
 
   if ( ! info[3]->IsFunction()) {
 #ifdef _WIN32
@@ -440,9 +440,9 @@ static NAN_METHOD(Fcntl) {
     return THROW_BAD_ARGS;
   }
 
-  int fd = info[0]->Int32Value();
-  int cmd = info[1]->Int32Value();
-  int arg = info[2]->Int32Value();
+  int fd = info[0].As<v8::Int32>()->Value();
+  int cmd = info[1].As<v8::Int32>()->Value();
+  int arg = info[2].As<v8::Int32>()->Value();
 
   if ( ! info[3]->IsFunction()) {
     int result = fcntl(fd, cmd, arg);
@@ -476,7 +476,7 @@ static NAN_METHOD(StatVFS) {
     return THROW_BAD_ARGS;
   }
 
-  Nan::Utf8String path(info[0]->ToString());
+  Nan::Utf8String path(info[0]);
 
   // Synchronous call needs much less work
   if (!info[1]->IsFunction()) {
