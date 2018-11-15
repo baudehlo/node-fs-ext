@@ -137,9 +137,11 @@ for (key in fs) {
 }
 
 // put constants into constants module (don't like doing this but...)
-for (key in binding) {
-  if (/^[A-Z_]+$/.test(key) && !constants.hasOwnProperty(key)) {
-    constants[key] = binding[key];
+if (!Object.isExtensible || Object.isExtensible(constants)) {
+  for (key in binding) {
+    if (/^[A-Z_]+$/.test(key) && !constants.hasOwnProperty(key)) {
+      constants[key] = binding[key];
+    }
   }
 }
 
