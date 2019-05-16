@@ -127,15 +127,15 @@ static void EIO_After(uv_work_t *req) {
         argc = 2;
         statvfs_result = Nan::New<Object>();
         argv[1] = statvfs_result;
-        statvfs_result->Set(Nan::New<String>(f_namemax_symbol), Nan::New<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_namemax)));
-        statvfs_result->Set(Nan::New<String>(f_bsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_bsize)));
-        statvfs_result->Set(Nan::New<String>(f_frsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_frsize)));
-        statvfs_result->Set(Nan::New<String>(f_blocks_symbol), Nan::New<Number>(store_data->statvfs_buf.f_blocks));
-        statvfs_result->Set(Nan::New<String>(f_bavail_symbol), Nan::New<Number>(store_data->statvfs_buf.f_bavail));
-        statvfs_result->Set(Nan::New<String>(f_bfree_symbol), Nan::New<Number>(store_data->statvfs_buf.f_bfree));
-        statvfs_result->Set(Nan::New<String>(f_files_symbol), Nan::New<Number>(store_data->statvfs_buf.f_files));
-        statvfs_result->Set(Nan::New<String>(f_favail_symbol), Nan::New<Number>(store_data->statvfs_buf.f_favail));
-        statvfs_result->Set(Nan::New<String>(f_ffree_symbol), Nan::New<Number>(store_data->statvfs_buf.f_ffree));
+        Nan::Set(statvfs_result, Nan::New<String>(f_namemax_symbol), Nan::New<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_namemax)));
+        Nan::Set(statvfs_result, Nan::New<String>(f_bsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_bsize)));
+        Nan::Set(statvfs_result, Nan::New<String>(f_frsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_frsize)));
+        Nan::Set(statvfs_result, Nan::New<String>(f_blocks_symbol), Nan::New<Number>(store_data->statvfs_buf.f_blocks));
+        Nan::Set(statvfs_result, Nan::New<String>(f_bavail_symbol), Nan::New<Number>(store_data->statvfs_buf.f_bavail));
+        Nan::Set(statvfs_result, Nan::New<String>(f_bfree_symbol), Nan::New<Number>(store_data->statvfs_buf.f_bfree));
+        Nan::Set(statvfs_result, Nan::New<String>(f_files_symbol), Nan::New<Number>(store_data->statvfs_buf.f_files));
+        Nan::Set(statvfs_result, Nan::New<String>(f_favail_symbol), Nan::New<Number>(store_data->statvfs_buf.f_favail));
+        Nan::Set(statvfs_result, Nan::New<String>(f_ffree_symbol), Nan::New<Number>(store_data->statvfs_buf.f_ffree));
 #else
         argc = 1;
 #endif
@@ -485,17 +485,17 @@ static NAN_METHOD(StatVFS) {
     int ret = statvfs(*path, &buf);
     if (ret != 0) return Nan::ThrowError(Nan::ErrnoException(errno, "statvfs", "", *path));
     Local<Object> result = Nan::New<Object>();
-    result->Set(Nan::New<String>(f_namemax_symbol), Nan::New<Integer>(static_cast<uint32_t>(buf.f_namemax)));
-    result->Set(Nan::New<String>(f_bsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(buf.f_bsize)));
-    result->Set(Nan::New<String>(f_frsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(buf.f_frsize)));
+    Nan::Set(result, Nan::New<String>(f_namemax_symbol), Nan::New<Integer>(static_cast<uint32_t>(buf.f_namemax)));
+    Nan::Set(result, Nan::New<String>(f_bsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(buf.f_bsize)));
+    Nan::Set(result, Nan::New<String>(f_frsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(buf.f_frsize)));
 
-    result->Set(Nan::New<String>(f_blocks_symbol), Nan::New<Number>(buf.f_blocks));
-    result->Set(Nan::New<String>(f_bavail_symbol), Nan::New<Number>(buf.f_bavail));
-    result->Set(Nan::New<String>(f_bfree_symbol), Nan::New<Number>(buf.f_bfree));
+    Nan::Set(result, Nan::New<String>(f_blocks_symbol), Nan::New<Number>(buf.f_blocks));
+    Nan::Set(result, Nan::New<String>(f_bavail_symbol), Nan::New<Number>(buf.f_bavail));
+    Nan::Set(result, Nan::New<String>(f_bfree_symbol), Nan::New<Number>(buf.f_bfree));
 
-    result->Set(Nan::New<String>(f_files_symbol), Nan::New<Number>(buf.f_files));
-    result->Set(Nan::New<String>(f_favail_symbol), Nan::New<Number>(buf.f_favail));
-    result->Set(Nan::New<String>(f_ffree_symbol), Nan::New<Number>(buf.f_ffree));
+    Nan::Set(result, Nan::New<String>(f_files_symbol), Nan::New<Number>(buf.f_files));
+    Nan::Set(result, Nan::New<String>(f_favail_symbol), Nan::New<Number>(buf.f_favail));
+    Nan::Set(result, Nan::New<String>(f_ffree_symbol), Nan::New<Number>(buf.f_ffree));
     info.GetReturnValue().Set(result);
 #else
     info.GetReturnValue().SetUndefined();
@@ -588,12 +588,12 @@ NAN_MODULE_INIT(init)
 #ifdef F_SETLKW
   NODE_DEFINE_CONSTANT(target, F_SETLKW);
 #endif
-  target->Set(Nan::New<String>("seek").ToLocalChecked(), Nan::New<FunctionTemplate>(Seek)->GetFunction());
+  Export(target, "seek", Seek);
 #ifndef _WIN32
-  target->Set(Nan::New<String>("fcntl").ToLocalChecked(), Nan::New<FunctionTemplate>(Fcntl)->GetFunction());
+  Export(target, "fcntl", Fcntl);
 #endif
-  target->Set(Nan::New<String>("flock").ToLocalChecked(), Nan::New<FunctionTemplate>(Flock)->GetFunction());
-  target->Set(Nan::New<String>("statVFS").ToLocalChecked(), Nan::New<FunctionTemplate>(StatVFS)->GetFunction());
+  Export(target, "flock", Flock);
+  Export(target, "statVFS", StatVFS);
 
 #ifndef _WIN32
   f_namemax_symbol.Reset(Nan::New<String>("f_namemax").ToLocalChecked());
