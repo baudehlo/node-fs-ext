@@ -127,15 +127,15 @@ static void EIO_After(uv_work_t *req) {
         argc = 2;
         statvfs_result = Nan::New<Object>();
         argv[1] = statvfs_result;
-        statvfs_result->Set(Nan::New<String>(f_namemax_symbol), Nan::New<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_namemax)));
-        statvfs_result->Set(Nan::New<String>(f_bsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_bsize)));
-        statvfs_result->Set(Nan::New<String>(f_frsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_frsize)));
-        statvfs_result->Set(Nan::New<String>(f_blocks_symbol), Nan::New<Number>(store_data->statvfs_buf.f_blocks));
-        statvfs_result->Set(Nan::New<String>(f_bavail_symbol), Nan::New<Number>(store_data->statvfs_buf.f_bavail));
-        statvfs_result->Set(Nan::New<String>(f_bfree_symbol), Nan::New<Number>(store_data->statvfs_buf.f_bfree));
-        statvfs_result->Set(Nan::New<String>(f_files_symbol), Nan::New<Number>(store_data->statvfs_buf.f_files));
-        statvfs_result->Set(Nan::New<String>(f_favail_symbol), Nan::New<Number>(store_data->statvfs_buf.f_favail));
-        statvfs_result->Set(Nan::New<String>(f_ffree_symbol), Nan::New<Number>(store_data->statvfs_buf.f_ffree));
+        Nan::Set(statvfs_result, Nan::New<String>(f_namemax_symbol), Nan::New<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_namemax)));
+        Nan::Set(statvfs_result, Nan::New<String>(f_bsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_bsize)));
+        Nan::Set(statvfs_result, Nan::New<String>(f_frsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_frsize)));
+        Nan::Set(statvfs_result, Nan::New<String>(f_blocks_symbol), Nan::New<Number>(store_data->statvfs_buf.f_blocks));
+        Nan::Set(statvfs_result, Nan::New<String>(f_bavail_symbol), Nan::New<Number>(store_data->statvfs_buf.f_bavail));
+        Nan::Set(statvfs_result, Nan::New<String>(f_bfree_symbol), Nan::New<Number>(store_data->statvfs_buf.f_bfree));
+        Nan::Set(statvfs_result, Nan::New<String>(f_files_symbol), Nan::New<Number>(store_data->statvfs_buf.f_files));
+        Nan::Set(statvfs_result, Nan::New<String>(f_favail_symbol), Nan::New<Number>(store_data->statvfs_buf.f_favail));
+        Nan::Set(statvfs_result, Nan::New<String>(f_ffree_symbol), Nan::New<Number>(store_data->statvfs_buf.f_ffree));
 #else
         argc = 1;
 #endif
@@ -347,8 +347,8 @@ static NAN_METHOD(Flock) {
   store_data_t* flock_data = new store_data_t();
 
   flock_data->fs_op = FS_OP_FLOCK;
-  flock_data->fd = info[0]->Int32Value();
-  flock_data->oper = info[1]->Int32Value();
+  flock_data->fd = info[0].As<v8::Int32>()->Value();
+  flock_data->oper = info[1].As<v8::Int32>()->Value();
 
   if (info[2]->IsFunction()) {
     flock_data->cb = new Nan::Callback((Local<Function>) info[2].As<Function>());
@@ -380,13 +380,13 @@ static inline int IsInt64(double x) {
   if (!(a)->IsUndefined() && !(a)->IsNull() && !(a)->IsInt32()) { \
     return Nan::ThrowTypeError("Not an integer"); \
   }
-#define GET_OFFSET(a) ((a)->IsNumber() ? (a)->Int32Value() : -1)
+#define GET_OFFSET(a) ((a)->IsInt32() ? (a).As<v8::Int32>()->Value() : -1)
 #else
 #define ASSERT_OFFSET(a) \
-  if (!(a)->IsUndefined() && !(a)->IsNull() && !IsInt64((a)->NumberValue())) { \
+  if (!(a)->IsUndefined() && !(a)->IsNull() && !((a)->IsNumber() && IsInt64((a).As<v8::Number>()->Value()))) { \
     return Nan::ThrowTypeError("Not an integer"); \
   }
-#define GET_OFFSET(a) ((a)->IsNumber() ? (a)->IntegerValue() : -1)
+#define GET_OFFSET(a) ((a)->IsNumber() ? static_cast<int64_t>((a).As<v8::Number>()->Value()) : -1)
 #endif
 
 //  fs.seek(fd, position, whence [, callback] )
@@ -398,10 +398,10 @@ static NAN_METHOD(Seek) {
     return THROW_BAD_ARGS;
   }
 
-  int fd = info[0]->Int32Value();
+  int fd = info[0].As<v8::Int32>()->Value();
   ASSERT_OFFSET(info[1]);
   off_t offs = GET_OFFSET(info[1]);
-  int whence = info[2]->Int32Value();
+  int whence = info[2].As<v8::Int32>()->Value();
 
   if ( ! info[3]->IsFunction()) {
 #ifdef _WIN32
@@ -440,9 +440,9 @@ static NAN_METHOD(Fcntl) {
     return THROW_BAD_ARGS;
   }
 
-  int fd = info[0]->Int32Value();
-  int cmd = info[1]->Int32Value();
-  int arg = info[2]->Int32Value();
+  int fd = info[0].As<v8::Int32>()->Value();
+  int cmd = info[1].As<v8::Int32>()->Value();
+  int arg = info[2].As<v8::Int32>()->Value();
 
   if ( ! info[3]->IsFunction()) {
     int result = fcntl(fd, cmd, arg);
@@ -476,7 +476,7 @@ static NAN_METHOD(StatVFS) {
     return THROW_BAD_ARGS;
   }
 
-  Nan::Utf8String path(info[0]->ToString());
+  Nan::Utf8String path(info[0]);
 
   // Synchronous call needs much less work
   if (!info[1]->IsFunction()) {
@@ -485,17 +485,17 @@ static NAN_METHOD(StatVFS) {
     int ret = statvfs(*path, &buf);
     if (ret != 0) return Nan::ThrowError(Nan::ErrnoException(errno, "statvfs", "", *path));
     Local<Object> result = Nan::New<Object>();
-    result->Set(Nan::New<String>(f_namemax_symbol), Nan::New<Integer>(static_cast<uint32_t>(buf.f_namemax)));
-    result->Set(Nan::New<String>(f_bsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(buf.f_bsize)));
-    result->Set(Nan::New<String>(f_frsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(buf.f_frsize)));
+    Nan::Set(result, Nan::New<String>(f_namemax_symbol), Nan::New<Integer>(static_cast<uint32_t>(buf.f_namemax)));
+    Nan::Set(result, Nan::New<String>(f_bsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(buf.f_bsize)));
+    Nan::Set(result, Nan::New<String>(f_frsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(buf.f_frsize)));
 
-    result->Set(Nan::New<String>(f_blocks_symbol), Nan::New<Number>(buf.f_blocks));
-    result->Set(Nan::New<String>(f_bavail_symbol), Nan::New<Number>(buf.f_bavail));
-    result->Set(Nan::New<String>(f_bfree_symbol), Nan::New<Number>(buf.f_bfree));
+    Nan::Set(result, Nan::New<String>(f_blocks_symbol), Nan::New<Number>(buf.f_blocks));
+    Nan::Set(result, Nan::New<String>(f_bavail_symbol), Nan::New<Number>(buf.f_bavail));
+    Nan::Set(result, Nan::New<String>(f_bfree_symbol), Nan::New<Number>(buf.f_bfree));
 
-    result->Set(Nan::New<String>(f_files_symbol), Nan::New<Number>(buf.f_files));
-    result->Set(Nan::New<String>(f_favail_symbol), Nan::New<Number>(buf.f_favail));
-    result->Set(Nan::New<String>(f_ffree_symbol), Nan::New<Number>(buf.f_ffree));
+    Nan::Set(result, Nan::New<String>(f_files_symbol), Nan::New<Number>(buf.f_files));
+    Nan::Set(result, Nan::New<String>(f_favail_symbol), Nan::New<Number>(buf.f_favail));
+    Nan::Set(result, Nan::New<String>(f_ffree_symbol), Nan::New<Number>(buf.f_ffree));
     info.GetReturnValue().Set(result);
 #else
     info.GetReturnValue().SetUndefined();
@@ -588,12 +588,12 @@ NAN_MODULE_INIT(init)
 #ifdef F_SETLKW
   NODE_DEFINE_CONSTANT(target, F_SETLKW);
 #endif
-  target->Set(Nan::New<String>("seek").ToLocalChecked(), Nan::New<FunctionTemplate>(Seek)->GetFunction());
+  Export(target, "seek", Seek);
 #ifndef _WIN32
-  target->Set(Nan::New<String>("fcntl").ToLocalChecked(), Nan::New<FunctionTemplate>(Fcntl)->GetFunction());
+  Export(target, "fcntl", Fcntl);
 #endif
-  target->Set(Nan::New<String>("flock").ToLocalChecked(), Nan::New<FunctionTemplate>(Flock)->GetFunction());
-  target->Set(Nan::New<String>("statVFS").ToLocalChecked(), Nan::New<FunctionTemplate>(StatVFS)->GetFunction());
+  Export(target, "flock", Flock);
+  Export(target, "statVFS", StatVFS);
 
 #ifndef _WIN32
   f_namemax_symbol.Reset(Nan::New<String>("f_namemax").ToLocalChecked());

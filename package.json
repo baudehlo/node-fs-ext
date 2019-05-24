@@ -19,7 +19,7 @@
     "node": ">= 8.0.0"
   },
   "dependencies": {
-    "nan": "^2.10.0"
+    "nan": "^2.14.0"
   },
   "licenses": [
     {
@@ -37,6 +37,6 @@
     "cover": "NODE_ENV=cov ./node_modules/.bin/istanbul cover node ./run_tests"
   },
   "devDependencies": {
-    "eslint": "^2.13.0"
+    "eslint": "^5.9.0"
   }
 }
