@@ -113,41 +113,41 @@ static void EIO_After(uv_work_t *req) {
     argv[0] = Nan::Null();
 
     switch (store_data->fs_op) {
-      // These operations have no data to pass other than "error".
-      case FS_OP_FLOCK:
-        argc = 1;
-        break;
+    // These operations have no data to pass other than "error".
+    case FS_OP_FLOCK:
+      argc = 1;
+      break;
 
-      case FS_OP_SEEK:
-        argc = 2;
-        argv[1] = Nan::New<Number>(static_cast<double>(store_data->offset));
-        break;
-      case FS_OP_STATVFS:
+    case FS_OP_SEEK:
+      argc = 2;
+      argv[1] = Nan::New<Number>(static_cast<double>(store_data->offset));
+      break;
+    case FS_OP_STATVFS:
 #ifndef _WIN32
-        argc = 2;
-        statvfs_result = Nan::New<Object>();
-        argv[1] = statvfs_result;
-        Nan::Set(statvfs_result, Nan::New<String>(f_namemax_symbol), Nan::New<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_namemax)));
-        Nan::Set(statvfs_result, Nan::New<String>(f_bsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_bsize)));
-        Nan::Set(statvfs_result, Nan::New<String>(f_frsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_frsize)));
-        Nan::Set(statvfs_result, Nan::New<String>(f_blocks_symbol), Nan::New<Number>(store_data->statvfs_buf.f_blocks));
-        Nan::Set(statvfs_result, Nan::New<String>(f_bavail_symbol), Nan::New<Number>(store_data->statvfs_buf.f_bavail));
-        Nan::Set(statvfs_result, Nan::New<String>(f_bfree_symbol), Nan::New<Number>(store_data->statvfs_buf.f_bfree));
-        Nan::Set(statvfs_result, Nan::New<String>(f_files_symbol), Nan::New<Number>(store_data->statvfs_buf.f_files));
-        Nan::Set(statvfs_result, Nan::New<String>(f_favail_symbol), Nan::New<Number>(store_data->statvfs_buf.f_favail));
-        Nan::Set(statvfs_result, Nan::New<String>(f_ffree_symbol), Nan::New<Number>(store_data->statvfs_buf.f_ffree));
+      argc = 2;
+      statvfs_result = Nan::New<Object>();
+      argv[1] = statvfs_result;
+      Nan::Set(statvfs_result, Nan::New<String>(f_namemax_symbol), Nan::New<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_namemax)));
+      Nan::Set(statvfs_result, Nan::New<String>(f_bsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_bsize)));
+      Nan::Set(statvfs_result, Nan::New<String>(f_frsize_symbol), Nan::New<Integer>(static_cast<uint32_t>(store_data->statvfs_buf.f_frsize)));
+      Nan::Set(statvfs_result, Nan::New<String>(f_blocks_symbol), Nan::New<Number>(store_data->statvfs_buf.f_blocks));
+      Nan::Set(statvfs_result, Nan::New<String>(f_bavail_symbol), Nan::New<Number>(store_data->statvfs_buf.f_bavail));
+      Nan::Set(statvfs_result, Nan::New<String>(f_bfree_symbol), Nan::New<Number>(store_data->statvfs_buf.f_bfree));
+      Nan::Set(statvfs_result, Nan::New<String>(f_files_symbol), Nan::New<Number>(store_data->statvfs_buf.f_files));
+      Nan::Set(statvfs_result, Nan::New<String>(f_favail_symbol), Nan::New<Number>(store_data->statvfs_buf.f_favail));
+      Nan::Set(statvfs_result, Nan::New<String>(f_ffree_symbol), Nan::New<Number>(store_data->statvfs_buf.f_ffree));
 #else
-        argc = 1;
+      argc = 1;
 #endif
-        break;
+      break;
 #ifndef _WIN32
-      case FS_OP_FCNTL:
-        argc = 2;
-        argv[1] = Nan::New<Number>(store_data->result);
-        break;
+    case FS_OP_FCNTL:
+      argc = 2;
+      argv[1] = Nan::New<Number>(store_data->result);
+      break;
 #endif
-      default:
-        assert(0 && "Unhandled op type value");
+    default:
+      assert(0 && "Unhandled op type value");
     }
   }
 
@@ -173,11 +173,10 @@ static void EIO_StatVFS(uv_work_t *req) {
   struct statvfs *data = &(statvfs_data->statvfs_buf);
   if (statvfs(statvfs_data->path, data)) {
     statvfs_data->result = -1;
-  	memset(data, 0, sizeof(struct statvfs));
+    memset(data, 0, sizeof(struct statvfs));
   };
 #endif
   free(statvfs_data->path);
-  ;
 }
 
 #ifdef _WIN32
@@ -194,17 +193,17 @@ static off_t _win32_lseek(int fd, off_t offset, int whence) {
   DWORD method;
   switch (whence) {
   case SEEK_SET:
-      method = FILE_BEGIN;
-      break;
+    method = FILE_BEGIN;
+    break;
   case SEEK_CUR:
-      method = FILE_CURRENT;
-      break;
+    method = FILE_CURRENT;
+    break;
   case SEEK_END:
-      method = FILE_END;
-      break;
+    method = FILE_END;
+    break;
   default:
-      errno = EINVAL;
-      return -1;
+    errno = EINVAL;
+    return -1;
   }
 
   LARGE_INTEGER distance;
@@ -240,26 +239,26 @@ static void EIO_Seek(uv_work_t *req) {
 #ifndef _WIN32
 static void EIO_Fcntl(uv_work_t *req) {
   store_data_t* data = static_cast<store_data_t *>(req->data);
-  
+
   struct flock lk;
   lk.l_start = 0;
   lk.l_len = 0;
   lk.l_type = 0;
   lk.l_whence = 0;
   lk.l_pid = 0;
-  
+
   int result = -1;
   if (data->oper == F_GETLK || data->oper == F_SETLK || data->oper == F_SETLKW) {
-	if (data->oper == F_SETLK || data->oper == F_SETLKW) {
-		lk.l_whence = SEEK_SET;
-		lk.l_type   = data->arg;
-	}
-	data->result = result = fcntl(data->fd, data->oper, &lk); 
+    if (data->oper == F_SETLK || data->oper == F_SETLKW) {
+      lk.l_whence = SEEK_SET;
+      lk.l_type   = data->arg;
+    }
+    data->result = result = fcntl(data->fd, data->oper, &lk);
   } else {
-  	data->result = result = fcntl(data->fd, data->oper, data->arg);
+    data->result = result = fcntl(data->fd, data->oper, data->arg);
   }
   if (result == -1) {
-   	data->error = errno;
+    data->error = errno;
   }
 }
 #endif
@@ -290,33 +289,33 @@ static int _win32_flock(int fd, int oper) {
 
   switch(oper) {
   case LOCK_SH:               /* shared lock */
-      if (LockFileEx(fh, 0, 0, LK_LEN, 0, &o))
-        i = 0;
-      break;
+    if (LockFileEx(fh, 0, 0, LK_LEN, 0, &o))
+      i = 0;
+    break;
   case LOCK_EX:               /* exclusive lock */
-      if (LockFileEx(fh, LOCKFILE_EXCLUSIVE_LOCK, 0, LK_LEN, 0, &o))
-        i = 0;
-      break;
+    if (LockFileEx(fh, LOCKFILE_EXCLUSIVE_LOCK, 0, LK_LEN, 0, &o))
+      i = 0;
+    break;
   case LOCK_SH|LOCK_NB:       /* non-blocking shared lock */
-      if (LockFileEx(fh, LOCKFILE_FAIL_IMMEDIATELY, 0, LK_LEN, 0, &o))
-        i = 0;
-      break;
+    if (LockFileEx(fh, LOCKFILE_FAIL_IMMEDIATELY, 0, LK_LEN, 0, &o))
+      i = 0;
+    break;
   case LOCK_EX|LOCK_NB:       /* non-blocking exclusive lock */
-      if (LockFileEx(fh, LOCKFILE_EXCLUSIVE_LOCK|LOCKFILE_FAIL_IMMEDIATELY,
-                     0, LK_LEN, 0, &o))
-        i = 0;
-      break;
+    if (LockFileEx(fh, LOCKFILE_EXCLUSIVE_LOCK|LOCKFILE_FAIL_IMMEDIATELY,
+                   0, LK_LEN, 0, &o))
+      i = 0;
+    break;
   case LOCK_UN:               /* unlock lock */
-      if (UnlockFileEx(fh, 0, LK_LEN, 0, &o) ||
-          GetLastError() == ERROR_NOT_LOCKED)
-        i = 0;
-      break;
+    if (UnlockFileEx(fh, 0, LK_LEN, 0, &o) ||
+        GetLastError() == ERROR_NOT_LOCKED)
+      i = 0;
+    break;
   default:                    /* unknown */
-      errno = EINVAL;
-      return -1;
+    errno = EINVAL;
+    return -1;
   }
   if (i == -1) {
-    if (GetLastError() == ERROR_LOCK_VIOLATION) 
+    if (GetLastError() == ERROR_LOCK_VIOLATION)
       errno = EWOULDBLOCK;
     else
       errno = EINVAL;
