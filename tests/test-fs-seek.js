@@ -2,7 +2,7 @@
 
 // Test these APIs as published in extension module 'fs-ext'
 
-//    fs.seek(fd, offset, whence, [callback])
+//    fsExt.seek(fd, offset, whence, [callback])
 //
 //  Asynchronous lseek(2).
 //
@@ -13,7 +13,7 @@
 //  bytes (can be negative), or 2 (SEEK_END) to set to the end of the file
 //  plus offset bytes (usually negative or zero to seek to the end of the file).
 //
-//    fs.seekSync(fd, offset, whence)
+//    fsExt.seekSync(fd, offset, whence)
 //
 //  Synchronous lseek(2). Throws an exception on error.  Returns current
 //  file position.
@@ -47,7 +47,8 @@
 var assert = require('assert'),
   path   = require('path'),
   util   = require('util'),
-  fs     = require('../fs-ext'),
+  fs     = require('fs'),
+  fsExt  = require('../fs-ext'),
   os     = require('os');
 
 var tests_ok  = 0,
@@ -220,16 +221,16 @@ function expect_error(api_name, err, value_seen, expected_error) {
 //XXX Consider just exiting without error after displaying notices
 
 tests_run++;
-if ( typeof fs.seek !== 'function' ) {
-  console.log('fs.seek API is missing');
+if ( typeof fsExt.seek !== 'function' ) {
+  console.log('fsExt.seek API is missing');
 }
 else {
   tests_ok++;
 }
 
 tests_run++;
-if ( typeof fs.seekSync !== 'function' ) {
-  console.log('fs.seekSync API is missing');
+if ( typeof fsExt.seekSync !== 'function' ) {
+  console.log('fsExt.seekSync API is missing');
 }
 else {
   tests_ok++;
@@ -263,22 +264,20 @@ if ( tests_run !== tests_ok ) {
 
 // Test that constants are published -  -  -  -  -  -  -  -
 
-var fs_binding = require('../build/Release/fs-ext');
-
 var constant_names = [ 'SEEK_SET',  'SEEK_CUR',  'SEEK_END' ];
 
 constant_names.forEach(function(name){
 
-  if (debug_me) console.log('  %s    %j    %j', name, fs_binding[name], typeof fs_binding[name]);
+  if (debug_me) console.log('  %s    %j    %j', name, fsExt.constants[name], typeof fsExt.constants[name]);
 
   tests_run++;
-  if ( fs_binding[name] !== undefined  &&
-     typeof fs_binding[name] === 'number' ) {
+  if ( fsExt.constants[name] !== undefined  &&
+     typeof fsExt.constants[name] === 'number' ) {
     tests_ok++;
   }
   else {
     console.log('FAILURE: %s is not defined correctly', name);
-    console.log('  %s    %j    %j', name, fs_binding[name], typeof fs_binding[name]);
+    console.log('  %s    %j    %j', name, fsExt.constants[name], typeof fsExt.constants[name]);
   }
 });
 
@@ -291,7 +290,7 @@ constant_names.forEach(function(name){
 tests_run++;
 result = err = undefined;
 try {
-  result = fs.seekSync(undefined, 0, 0);
+  result = fsExt.seekSync(undefined, 0, 0);
 }
 catch (e) {
   err = e;
@@ -304,7 +303,7 @@ expect_error('seekSync', err, result, 'Bad argument');
 tests_run++;
 result = err = undefined;
 try {
-  result = fs.seekSync('foo', 0, 0);
+  result = fsExt.seekSync('foo', 0, 0);
 }
 catch (e) {
   err = e;
@@ -317,7 +316,7 @@ expect_error('seekSync', err, result, 'Bad argument');
 tests_run++;
 result = err = undefined;
 try {
-  result = fs.seekSync(-9, 0, 0);
+  result = fsExt.seekSync(-9, 0, 0);
 }
 catch (e) {
   err = e;
@@ -330,7 +329,7 @@ expect_errno('seekSync', err, result, 'EBADF');
 tests_run++;
 result = err = undefined;
 try {
-  result = fs.seekSync(98765, 0, 0);
+  result = fsExt.seekSync(98765, 0, 0);
 }
 catch (e) {
   err = e;
@@ -343,7 +342,7 @@ expect_errno('seekSync', err, result, 'EBADF');
 tests_run++;
 result = err = undefined;
 try {
-  result = fs.seekSync(file_fd, 0, 98765);
+  result = fsExt.seekSync(file_fd, 0, 98765);
 }
 catch (e) {
   err = e;
@@ -354,7 +353,7 @@ expect_errno('seekSync', err, result, 'EINVAL');
 tests_run++;
 result = err = undefined;
 try {
-  result = fs.seekSync(file_fd, 0, -99);
+  result = fsExt.seekSync(file_fd, 0, -99);
 }
 catch (e) {
   err = e;
@@ -367,7 +366,7 @@ expect_errno('seekSync', err, result, 'EINVAL');
 tests_run++;
 result = err = undefined;
 try {
-  result = fs.seekSync(file_fd, -98765, 0);
+  result = fsExt.seekSync(file_fd, -98765, 0);
 }
 catch (e) {
   err = e;
@@ -380,7 +379,7 @@ expect_errno('seekSync', err, result, 'EINVAL');
 tests_run++;
 result = err = undefined;
 try {
-  result = fs.seekSync(file_fd, 4.0001, 0);
+  result = fsExt.seekSync(file_fd, 4.0001, 0);
 }
 catch (e) {
   err = e;
@@ -394,7 +393,7 @@ expect_error('seekSync', err, result, 'Not an integer');
 tests_run++;
 result = err = undefined;
 try {
-  result = fs.seekSync(file_fd, 98765, 0);
+  result = fsExt.seekSync(file_fd, 98765, 0);
 }
 catch (e) {
   err = e;
@@ -408,7 +407,7 @@ tests_run++;
 result = err = undefined;
 offset_big = 2 * 1024 * 1024 * 1024 - 1;
 try {
-  result = fs.seekSync(file_fd, offset_big, 0);
+  result = fsExt.seekSync(file_fd, offset_big, 0);
 }
 catch (e) {
   err = e;
@@ -420,7 +419,7 @@ tests_run++;
 result = err = undefined;
 offset_big = 2 * 1024 * 1024 * 1024;
 try {
-  result = fs.seekSync(file_fd, offset_big, 0);
+  result = fsExt.seekSync(file_fd, offset_big, 0);
 }
 catch (e) {
   err = e;
@@ -432,7 +431,7 @@ tests_run++;
 result = err = undefined;
 offset_big = 42 * 1024 * 1024 * 1024;
 try {
-  result = fs.seekSync(file_fd, offset_big, 0);
+  result = fsExt.seekSync(file_fd, offset_big, 0);
 }
 catch (e) {
   err = e;
@@ -445,7 +444,7 @@ result = err = undefined;
 offset_big = 8 * 1024 * 1024 * 1024 * 1024 - 1;
 // Linux is limited to 43 bits for file position values?
 try {
-  result = fs.seekSync(file_fd, offset_big, 0);
+  result = fsExt.seekSync(file_fd, offset_big, 0);
 }
 catch (e) {
   err = e;
@@ -460,7 +459,7 @@ expect_value('seekSync', err, result, offset_big);
 // // Linux is limited to 43 bits for file position values?
 // //console.log('    offset_big   %s    %s', offset_big.toString(), offset_big.toString(16) );
 // try {
-//   result = fs.seekSync(file_fd, offset_big, 0);
+//   result = fsExt.seekSync(file_fd, offset_big, 0);
 //   //console.log('    result       %s    %s', result.toString(), result.toString(16) );
 // } catch (e) {
 //   err = e;
@@ -476,7 +475,7 @@ expect_value('seekSync', err, result, offset_big);
 tests_run++;
 result = err = undefined;
 try {
-  result = fs.seekSync(file_fd, 0, 0);
+  result = fsExt.seekSync(file_fd, 0, 0);
 }
 catch (e) {
   err = e;
@@ -489,7 +488,7 @@ expect_value('seekSync', err, result, 0);
 tests_run++;
 result = err = undefined;
 try {
-  result = fs.seekSync(file_fd, 0, 1);
+  result = fsExt.seekSync(file_fd, 0, 1);
 }
 catch (e) {
   err = e;
@@ -502,7 +501,7 @@ expect_value('seekSync', err, result, 0);
 tests_run++;
 result = err = undefined;
 try {
-  result = fs.seekSync(file_fd, 0, 2);
+  result = fsExt.seekSync(file_fd, 0, 2);
 }
 catch (e) {
   err = e;
@@ -515,7 +514,7 @@ expect_value('seekSync', err, result, 0);
 tests_run++;
 result = err = undefined;
 try {
-  result = fs.seekSync(file_fd, 0, fs_binding.SEEK_SET);
+  result = fsExt.seekSync(file_fd, 0, fsExt.constants.SEEK_SET);
 }
 catch (e) {
   err = e;
@@ -528,7 +527,7 @@ expect_value('seekSync', err, result, 0);
 tests_run++;
 result = err = undefined;
 try {
-  result = fs.seekSync(file_fd, 0, fs_binding.SEEK_CUR);
+  result = fsExt.seekSync(file_fd, 0, fsExt.constants.SEEK_CUR);
 }
 catch (e) {
   err = e;
@@ -541,7 +540,7 @@ expect_value('seekSync', err, result, 0);
 tests_run++;
 result = err = undefined;
 try {
-  result = fs.seekSync(file_fd, 0, fs_binding.SEEK_END);
+  result = fsExt.seekSync(file_fd, 0, fsExt.constants.SEEK_END);
 }
 catch (e) {
   err = e;
@@ -556,28 +555,28 @@ expect_value('seekSync', err, result, 0);
 // SEEK_SET to 0
 
 tests_run++;
-fs.seek(file_fd, 0, 0, function(err, result) {
+fsExt.seek(file_fd, 0, 0, function(err, result) {
   expect_value('seek', err, result, 0);
 
   tests_run++;
-  fs.seek(file_fd, 0, 1, function(err, result) {
+  fsExt.seek(file_fd, 0, 1, function(err, result) {
     expect_value('seek', err, result, 0);
 
     tests_run++;
-    fs.seek(file_fd, 0, 2, function(err, result) {
+    fsExt.seek(file_fd, 0, 2, function(err, result) {
       expect_value('seek', err, result, 0);
 
       // Test invalid calls: seek  -  -  -  -  -  -  -  -  -
 
       // offset value is negative
       tests_run++;
-      fs.seek(file_fd, -98765, 0, function(err, result) {
+      fsExt.seek(file_fd, -98765, 0, function(err, result) {
         expect_errno('seek', err, result, 'EINVAL');
 
         // offset value is quite large (over 32 bits)
         tests_run++;
         offset_big = 42 * 1024 * 1024 * 1024;
-        fs.seek(file_fd, offset_big, 0, function(err, result) {
+        fsExt.seek(file_fd, offset_big, 0, function(err, result) {
           expect_value('seek', err, result, offset_big);
         });
       });

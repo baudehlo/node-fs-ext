@@ -2,14 +2,15 @@
 
 // Test these APIs as published in extension module 'fs-ext'
 //
-// fs.fcntl(fd, cmd, [arg], [callback])
+// fsExt.fcntl(fd, cmd, [arg], [callback])
 //
 //  console.log( require.resolve('../fs-ext'));
 
 var assert = require('assert'),
   path   = require('path'),
   util   = require('util'),
-  fs     = require('../fs-ext'),
+  fs     = require('fs'),
+  fsExt  = require('../fs-ext'),
   os     = require('os');
 
 var tests_ok  = 0,
@@ -100,16 +101,16 @@ function expect_ok(api_name, resource, err) {
 //XXX Consider just exiting without error after displaying notices
 
 tests_run++;
-if ( typeof fs.fcntl !== 'function' ) {
-  console.log('fs.fcntl API is missing');
+if ( typeof fsExt.fcntl !== 'function' ) {
+  console.log('fsExt.fcntl API is missing');
 }
 else {
   tests_ok++;
 }
 
 tests_run++;
-if ( typeof fs.fcntlSync !== 'function' ) {
-  console.log('fs.fcntlSync API is missing');
+if ( typeof fsExt.fcntlSync !== 'function' ) {
+  console.log('fsExt.fcntlSync API is missing');
 }
 else {
   tests_ok++;
@@ -143,22 +144,20 @@ if ( tests_run !== tests_ok ) {
 
 // Test that constants are published -  -  -  -  -  -  -  -
 
-var fs_binding = require('../build/Release/fs-ext');
-
 var constant_names = [ 'F_SETFD',  'F_GETFD',  'FD_CLOEXEC' ];
 
 constant_names.forEach(function(name){
 
-  if (debug_me) console.log('  %s    %j    %j', name, fs_binding[name], typeof fs_binding[name]);
+  if (debug_me) console.log('  %s    %j    %j', name, fsExt.constants[name], typeof fsExt.constants[name]);
 
   tests_run++;
-  if ( fs_binding[name] !== undefined  &&
-     typeof fs_binding[name] === 'number' ) {
+  if ( fsExt.constants[name] !== undefined  &&
+     typeof fsExt.constants[name] === 'number' ) {
     tests_ok++;
   }
   else {
     console.log('FAILURE: %s is not defined correctly', name);
-    console.log('  %s    %j    %j', name, fs_binding[name], typeof fs_binding[name]);
+    console.log('  %s    %j    %j', name, fsExt.constants[name], typeof fsExt.constants[name]);
   }
 });
 
@@ -169,7 +168,7 @@ constant_names.forEach(function(name){
 
 tests_run++;
 try {
-  err = fs.fcntlSync(undefined, 0);
+  err = fsExt.fcntlSync(undefined, 0);
 }
 catch (e) {
   err = e;
@@ -188,7 +187,7 @@ else if (debug_me) {
 
 tests_run++;
 try {
-  err = fs.fcntlSync('foo', 0);
+  err = fsExt.fcntlSync('foo', 0);
 }
 catch (e) {
   err = e;
@@ -207,7 +206,7 @@ else if (debug_me) {
 
 tests_run++;
 try {
-  err = fs.fcntlSync(-9, 0);
+  err = fsExt.fcntlSync(-9, 0);
 }
 catch (e) {
   err = e;
@@ -219,7 +218,7 @@ expect_errno('fcntlSync', -9, err, 'EBADF');
 
 tests_run++;
 try {
-  err = fs.fcntlSync(98765, 0);
+  err = fsExt.fcntlSync(98765, 0);
 }
 catch (e) {
   err = e;
@@ -232,7 +231,7 @@ expect_errno('fcntlSync', 98765, err, 'EBADF');
 
 tests_run++;
 try {
-  err = fs.fcntlSync(file_fd, 'foo');
+  err = fsExt.fcntlSync(file_fd, 'foo');
 }
 catch (e) {
   err = e;
@@ -253,7 +252,7 @@ else if (debug_me) {
 tests_run++;
 try {
   err = null;
-  fs.fcntlSync(file_fd, 'getfd');
+  fsExt.fcntlSync(file_fd, 'getfd');
 }
 catch (e) {
   err = e;
@@ -266,18 +265,18 @@ expect_ok('fcntlSync', file_fd, err);
 tests_run++;
 try {
   err = null;
-  var flags = fs.fcntlSync(file_fd, 'getfd');
+  var flags = fsExt.fcntlSync(file_fd, 'getfd');
   console.log("initial flags:" + (flags));
 
-  fs.fcntlSync(file_fd, 'setfd', flags | fs_binding.FD_CLOEXEC);
-  flags = fs.fcntlSync(file_fd, 'getfd');
-  if ((flags & fs_binding.FD_CLOEXEC) !== fs_binding.FD_CLOEXEC) {
+  fsExt.fcntlSync(file_fd, 'setfd', flags | fsExt.constants.FD_CLOEXEC);
+  flags = fsExt.fcntlSync(file_fd, 'getfd');
+  if ((flags & fsExt.constants.FD_CLOEXEC) !== fsExt.constants.FD_CLOEXEC) {
     throw new Error("Expected FD_CLOEXEC to be set: " + flags);
   }
 
-  fs.fcntlSync(file_fd, 'setfd', flags & (~fs_binding.FD_CLOEXEC));
-  flags = fs.fcntlSync(file_fd, 'getfd');
-  if ((flags & fs_binding.FD_CLOEXEC) === fs_binding.FD_CLOEXEC) {
+  fsExt.fcntlSync(file_fd, 'setfd', flags & (~fsExt.constants.FD_CLOEXEC));
+  flags = fsExt.fcntlSync(file_fd, 'getfd');
+  if ((flags & fsExt.constants.FD_CLOEXEC) === fsExt.constants.FD_CLOEXEC) {
     throw new Error("Expected FD_CLOEXEC to be cleared");
   }
 }
@@ -291,31 +290,31 @@ expect_ok('fcntlSync', file_fd, err);
 // SEEK_SET to 0
 
 tests_run++;
-fs.fcntl(file_fd, 'getfd', function(err, flags) {
+fsExt.fcntl(file_fd, 'getfd', function(err, flags) {
   expect_ok('fcntl', file_fd, err);
 
   tests_run++;
-  fs.fcntl(file_fd, 'setfd', flags | fs_binding.FD_CLOEXEC, function(err) {
+  fsExt.fcntl(file_fd, 'setfd', flags | fsExt.constants.FD_CLOEXEC, function(err) {
     expect_ok('fcntl', file_fd, err);
 
     tests_run++;
-    fs.fcntl(file_fd, 'getfd', function(err, flags) {
+    fsExt.fcntl(file_fd, 'getfd', function(err, flags) {
       expect_ok('fcntl', file_fd, err);
 
-      if ((flags & fs_binding.FD_CLOEXEC) !== fs_binding.FD_CLOEXEC) {
+      if ((flags & fsExt.constants.FD_CLOEXEC) !== fsExt.constants.FD_CLOEXEC) {
         tests_run++;
         expect_ok('fcntl', file_fd, new Error("did not set cloexec"));
       }
 
       tests_run++;
-      fs.fcntl(file_fd, 'setfd', flags & (~fs_binding.FD_CLOEXEC), function(err, flags) {
+      fsExt.fcntl(file_fd, 'setfd', flags & (~fsExt.constants.FD_CLOEXEC), function(err, flags) {
         expect_ok('fcntl', file_fd, err);
 
         tests_run++;
-        fs.fcntl(file_fd, 'getfd', function(err, flags) {
+        fsExt.fcntl(file_fd, 'getfd', function(err, flags) {
           expect_ok('fcntl', file_fd, err);
 
-          if ((flags & fs_binding.FD_CLOEXEC) === fs_binding.FD_CLOEXEC) {
+          if ((flags & fsExt.constants.FD_CLOEXEC) === fsExt.constants.FD_CLOEXEC) {
             tests_run++;
             expect_ok('fcntl', file_fd, new Error("did not clear cloexec"));
           }
@@ -327,7 +326,7 @@ fs.fcntl(file_fd, 'getfd', function(err, flags) {
           tests_run++;
 
           try {
-            fs.fcntl(file_fd, 'foo', function(err) {
+            fsExt.fcntl(file_fd, 'foo', function(err) {
               console.log('  unexpected callback from fcntl() with bad argument');
             });
             err = undefined;
