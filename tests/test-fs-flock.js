@@ -2,13 +2,13 @@
 
 // Test these APIs as published in extension module 'fs-ext'
 //
-// fs.flock(fd, flags, [callback])
+// fsExt.flock(fd, flags, [callback])
 //
 // Asynchronous flock(2).  No arguments other than a possible error are
 // passed to the callback.  Flags can be 'sh', 'ex', 'shnb', 'exnb', 'un'
 // and correspond to the various LOCK_SH, LOCK_EX, LOCK_SH|LOCK_NB, etc.
 //
-// fs.flockSync(fd, flags)
+// fsExt.flockSync(fd, flags)
 //
 // Synchronous flock(2). Throws an exception on error.
 
@@ -26,7 +26,8 @@
 var assert = require('assert'),
   path   = require('path'),
   util   = require('util'),
-  fs     = require('../fs-ext'),
+  fs     = require('fs'),
+  fsExt  = require('../fs-ext'),
   os     = require('os');
 
 var tests_ok  = 0,
@@ -118,16 +119,16 @@ function expect_ok(api_name, resource, err) {
 //XXX Consider just exiting without error after displaying notices
 
 tests_run++;
-if ( typeof fs.flock !== 'function' ) {
-  console.log('fs.flock API is missing');
+if ( typeof fsExt.flock !== 'function' ) {
+  console.log('fsExt.flock API is missing');
 }
 else {
   tests_ok++;
 }
 
 tests_run++;
-if ( typeof fs.flockSync !== 'function' ) {
-  console.log('fs.flockSync API is missing');
+if ( typeof fsExt.flockSync !== 'function' ) {
+  console.log('fsExt.flockSync API is missing');
 }
 else {
   tests_ok++;
@@ -161,22 +162,20 @@ if ( tests_run !== tests_ok ) {
 
 // Test that constants are published -  -  -  -  -  -  -  -
 
-var fs_binding = require('../build/Release/fs-ext');
-
 var constant_names = [ 'LOCK_EX',  'LOCK_NB',  'LOCK_SH',  'LOCK_UN' ];
 
 constant_names.forEach(function(name){
 
-  if (debug_me) console.log('  %s    %j    %j', name, fs_binding[name], typeof fs_binding[name]);
+  if (debug_me) console.log('  %s    %j    %j', name, fsExt.constants[name], typeof fsExt.constants[name]);
 
   tests_run++;
-  if ( fs_binding[name] !== undefined  &&
-     typeof fs_binding[name] === 'number' ) {
+  if ( fsExt.constants[name] !== undefined  &&
+     typeof fsExt.constants[name] === 'number' ) {
     tests_ok++;
   }
   else {
     console.log('FAILURE: %s is not defined correctly', name);
-    console.log('  %s    %j    %j', name, fs_binding[name], typeof fs_binding[name]);
+    console.log('  %s    %j    %j', name, fsExt.constants[name], typeof fsExt.constants[name]);
   }
 });
 
@@ -187,7 +186,7 @@ constant_names.forEach(function(name){
 
 tests_run++;
 try {
-  err = fs.flockSync(undefined, 'un');
+  err = fsExt.flockSync(undefined, 'un');
 }
 catch (e) {
   err = e;
@@ -206,7 +205,7 @@ else if (debug_me) {
 
 tests_run++;
 try {
-  err = fs.flockSync('foo', 'un');
+  err = fsExt.flockSync('foo', 'un');
 }
 catch (e) {
   err = e;
@@ -225,7 +224,7 @@ else if (debug_me) {
 
 tests_run++;
 try {
-  err = fs.flockSync(-9, 'un');
+  err = fsExt.flockSync(-9, 'un');
 }
 catch (e) {
   err = e;
@@ -237,7 +236,7 @@ expect_errno('flockSync', -9, err, 'EBADF');
 
 tests_run++;
 try {
-  err = fs.flockSync(98765, 'un');
+  err = fsExt.flockSync(98765, 'un');
 }
 catch (e) {
   err = e;
@@ -251,7 +250,7 @@ expect_errno('flockSync', 98765, err, 'EBADF');
 
 tests_run++;
 try {
-  err = fs.flockSync(file_fd, 'foo');
+  err = fsExt.flockSync(file_fd, 'foo');
 }
 catch (e) {
   err = e;
@@ -275,7 +274,7 @@ else if (debug_me) {
 
 tests_run++;
 try {
-  err = fs.flockSync(file_fd, 'un');
+  err = fsExt.flockSync(file_fd, 'un');
 }
 catch (e) {
   err = e;
@@ -287,7 +286,7 @@ expect_ok('flockSync', file_fd, err);
 
 tests_run++;
 try {
-  err = fs.flockSync(file_fd, 'sh');
+  err = fsExt.flockSync(file_fd, 'sh');
 }
 catch (e) {
   err = e;
@@ -296,7 +295,7 @@ expect_ok('flockSync', file_fd, err);
 
 tests_run++;
 try {
-  err = fs.flockSync(file_fd, 'un');
+  err = fsExt.flockSync(file_fd, 'un');
 }
 catch (e) {
   err = e;
@@ -308,7 +307,7 @@ expect_ok('flockSync', file_fd, err);
 
 tests_run++;
 try {
-  err = fs.flockSync(file_fd, 'ex');
+  err = fsExt.flockSync(file_fd, 'ex');
 }
 catch (e) {
   err = e;
@@ -317,7 +316,7 @@ expect_ok('flockSync', file_fd, err);
 
 tests_run++;
 try {
-  err = fs.flockSync(file_fd, 'un');
+  err = fsExt.flockSync(file_fd, 'un');
 }
 catch (e) {
   err = e;
@@ -329,7 +328,7 @@ expect_ok('flockSync', file_fd, err);
 
 tests_run++;
 try {
-  err = fs.flockSync(file_fd, 'shnb');
+  err = fsExt.flockSync(file_fd, 'shnb');
 }
 catch (e) {
   err = e;
@@ -338,7 +337,7 @@ expect_ok('flockSync', file_fd, err);
 
 tests_run++;
 try {
-  err = fs.flockSync(file_fd, 'un');
+  err = fsExt.flockSync(file_fd, 'un');
 }
 catch (e) {
   err = e;
@@ -350,7 +349,7 @@ expect_ok('flockSync', file_fd, err);
 
 tests_run++;
 try {
-  err = fs.flockSync(file_fd, 'exnb');
+  err = fsExt.flockSync(file_fd, 'exnb');
 }
 catch (e) {
   err = e;
@@ -359,7 +358,7 @@ expect_ok('flockSync', file_fd, err);
 
 tests_run++;
 try {
-  err = fs.flockSync(file_fd, 'un');
+  err = fsExt.flockSync(file_fd, 'un');
 }
 catch (e) {
   err = e;
@@ -379,7 +378,7 @@ expect_ok('flockSync', file_fd, err);
 
 tests_run++;
 tests_run++;
-fs.flock(file_fd, 'sh', function(err, extra) {
+fsExt.flock(file_fd, 'sh', function(err, extra) {
   expect_ok('flock', file_fd, err);
 
   // After a change to returning arguments to async callback routines,
@@ -392,7 +391,7 @@ fs.flock(file_fd, 'sh', function(err, extra) {
   }
 
   tests_run++;
-  fs.flock(file_fd, 'exnb', function(err) {
+  fsExt.flock(file_fd, 'exnb', function(err) {
     if (process.platform === 'win32') {
       // Windows doesn't support lock upgrades
       expect_errno('flock', 10035, err, 'EWOULDBLOCK');
@@ -402,7 +401,7 @@ fs.flock(file_fd, 'sh', function(err, extra) {
     }
 
     tests_run++;
-    fs.flock(file_fd, 'un', function(err) {
+    fsExt.flock(file_fd, 'un', function(err) {
       expect_ok('flock', file_fd, err);
 
       // Test invalid calls: flock  -  -  -  -  -  -  -  -  -
@@ -411,7 +410,7 @@ fs.flock(file_fd, 'sh', function(err, extra) {
       tests_run++;
 
       try {
-        fs.flock(file_fd, 'foo', function(err) {
+        fsExt.flock(file_fd, 'foo', function(err) {
           console.log('  unexpected callback from flock() with bad argument');
         });
         err = undefined;

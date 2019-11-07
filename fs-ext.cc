@@ -240,21 +240,21 @@ static void EIO_Seek(uv_work_t *req) {
 #ifndef _WIN32
 static void EIO_Fcntl(uv_work_t *req) {
   store_data_t* data = static_cast<store_data_t *>(req->data);
-  
+
   struct flock lk;
   lk.l_start = 0;
   lk.l_len = 0;
   lk.l_type = 0;
   lk.l_whence = 0;
   lk.l_pid = 0;
-  
+
   int result = -1;
   if (data->oper == F_GETLK || data->oper == F_SETLK || data->oper == F_SETLKW) {
 	if (data->oper == F_SETLK || data->oper == F_SETLKW) {
 		lk.l_whence = SEEK_SET;
 		lk.l_type   = data->arg;
 	}
-	data->result = result = fcntl(data->fd, data->oper, &lk); 
+	data->result = result = fcntl(data->fd, data->oper, &lk);
   } else {
   	data->result = result = fcntl(data->fd, data->oper, data->arg);
   }
@@ -316,7 +316,7 @@ static int _win32_flock(int fd, int oper) {
       return -1;
   }
   if (i == -1) {
-    if (GetLastError() == ERROR_LOCK_VIOLATION) 
+    if (GetLastError() == ERROR_LOCK_VIOLATION)
       errno = EWOULDBLOCK;
     else
       errno = EINVAL;
@@ -525,69 +525,74 @@ NAN_MODULE_INIT(init)
   _set_invalid_parameter_handler(uv__crt_invalid_parameter_handler);
 #endif
 
+  v8::Local<v8::Object> constants = Nan::New<v8::Object>();
+
 #ifdef SEEK_SET
-  NODE_DEFINE_CONSTANT(target, SEEK_SET);
+  NODE_DEFINE_CONSTANT(constants, SEEK_SET);
 #endif
 
 #ifdef SEEK_CUR
-  NODE_DEFINE_CONSTANT(target, SEEK_CUR);
+  NODE_DEFINE_CONSTANT(constants, SEEK_CUR);
 #endif
 
 #ifdef SEEK_END
-  NODE_DEFINE_CONSTANT(target, SEEK_END);
+  NODE_DEFINE_CONSTANT(constants, SEEK_END);
 #endif
 
 #ifdef LOCK_SH
-  NODE_DEFINE_CONSTANT(target, LOCK_SH);
+  NODE_DEFINE_CONSTANT(constants, LOCK_SH);
 #endif
 
 #ifdef LOCK_EX
-  NODE_DEFINE_CONSTANT(target, LOCK_EX);
+  NODE_DEFINE_CONSTANT(constants, LOCK_EX);
 #endif
 
 #ifdef LOCK_NB
-  NODE_DEFINE_CONSTANT(target, LOCK_NB);
+  NODE_DEFINE_CONSTANT(constants, LOCK_NB);
 #endif
 
 #ifdef LOCK_UN
-  NODE_DEFINE_CONSTANT(target, LOCK_UN);
+  NODE_DEFINE_CONSTANT(constants, LOCK_UN);
 #endif
 
 #ifdef F_GETFD
-  NODE_DEFINE_CONSTANT(target, F_GETFD);
+  NODE_DEFINE_CONSTANT(constants, F_GETFD);
 #endif
 
 #ifdef F_SETFD
-  NODE_DEFINE_CONSTANT(target, F_SETFD);
+  NODE_DEFINE_CONSTANT(constants, F_SETFD);
 #endif
 
 #ifdef FD_CLOEXEC
-  NODE_DEFINE_CONSTANT(target, FD_CLOEXEC);
+  NODE_DEFINE_CONSTANT(constants, FD_CLOEXEC);
 #endif
 
 #ifdef F_RDLCK
-  NODE_DEFINE_CONSTANT(target, F_RDLCK);
+  NODE_DEFINE_CONSTANT(constants, F_RDLCK);
 #endif
 
 #ifdef F_WRLCK
-  NODE_DEFINE_CONSTANT(target, F_WRLCK);
+  NODE_DEFINE_CONSTANT(constants, F_WRLCK);
 #endif
 
 #ifdef F_UNLCK
-  NODE_DEFINE_CONSTANT(target, F_UNLCK);
+  NODE_DEFINE_CONSTANT(constants, F_UNLCK);
 #endif
 
 #ifdef F_SETLK
-  NODE_DEFINE_CONSTANT(target, F_SETLK);
+  NODE_DEFINE_CONSTANT(constants, F_SETLK);
 #endif
 
 #ifdef F_GETLK
-  NODE_DEFINE_CONSTANT(target, F_GETLK);
+  NODE_DEFINE_CONSTANT(constants, F_GETLK);
 #endif
 
 #ifdef F_SETLKW
-  NODE_DEFINE_CONSTANT(target, F_SETLKW);
+  NODE_DEFINE_CONSTANT(constants, F_SETLKW);
 #endif
+
+  Nan::Set(target, Nan::New("constants").ToLocalChecked(), constants);
+
   Export(target, "seek", Seek);
 #ifndef _WIN32
   Export(target, "fcntl", Fcntl);

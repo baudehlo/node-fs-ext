@@ -20,8 +20,6 @@
 "use strict";
 
 var binding = require('./build/Release/fs-ext');
-var fs = require('fs');
-var constants = require('constants');
 
 // Used by flock
 function stringToFlockFlags(flag) {
@@ -31,19 +29,19 @@ function stringToFlockFlags(flag) {
   }
   switch (flag) {
     case 'sh':
-      return binding.LOCK_SH;
+      return binding.constants.LOCK_SH;
 
     case 'ex':
-      return binding.LOCK_EX;
+      return binding.constants.LOCK_EX;
 
     case 'shnb':
-      return binding.LOCK_SH | binding.LOCK_NB;
+      return binding.constants.LOCK_SH | binding.constants.LOCK_NB;
 
     case 'exnb':
-      return binding.LOCK_EX | binding.LOCK_NB;
+      return binding.constants.LOCK_EX | binding.constants.LOCK_NB;
 
     case 'un':
-      return binding.LOCK_UN;
+      return binding.constants.LOCK_UN;
 
     default:
       throw new Error('Unknown flock flag: ' + flag);
@@ -58,19 +56,19 @@ function stringToFcntlFlags(flag) {
 
   switch (flag) {
     case 'getfd':
-      return binding.F_GETFD;
+      return binding.constants.F_GETFD;
 
     case 'setfd':
-      return binding.F_SETFD;
+      return binding.constants.F_SETFD;
 
     case 'setlk':
-      return binding.F_SETLK;
+      return binding.constants.F_SETLK;
 
     case 'setlkw':
-      return binding.F_SETLKW;
+      return binding.constants.F_SETLKW;
 
     case 'getlk':
-      return binding.F_GETLK;
+      return binding.constants.F_GETLK;
 
     default:
       throw new Error('Unknown fcntl flag: ' + flag);
@@ -130,18 +128,4 @@ exports.statVFS = function(path, callback) {
   return binding.statVFS(path, callback);
 };
 
-// populate with fs functions from there
-var key;
-for (key in fs) {
-  exports[key] = fs[key];
-}
-
-// put constants into constants module (don't like doing this but...)
-if (!Object.isExtensible || Object.isExtensible(constants)) {
-  for (key in binding) {
-    if (/^[A-Z_]+$/.test(key) && !constants.hasOwnProperty(key)) {
-      constants[key] = binding[key];
-    }
-  }
-}
-
+exports.constants = binding.constants;

@@ -1,6 +1,7 @@
 "use strict";
 
-var fs = require('./');
+var fs = require('fs');
+var {flock} = require('./');
 
 /**
  * Function that locks the current file
@@ -17,7 +18,7 @@ function getCurrentFileSize(counter, timeout, cb) {
 
   console.log("Trying to aquire lock for the %s time", counter);
 
-  fs.flock(fd, 'exnb', function(err) {
+  flock(fd, 'exnb', function(err) {
     if (err) {
       return console.log("Couldn't lock file", counter);
     }
@@ -26,7 +27,7 @@ function getCurrentFileSize(counter, timeout, cb) {
 
     // unlock after `timeout`
     setTimeout(function() {
-      fs.flock(fd, 'un', function(err) {
+      flock(fd, 'un', function(err) {
         if (err) {
           return console.log("Couldn't unlock file", counter);
         }
