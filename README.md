@@ -7,8 +7,21 @@ fs-ext
 
 Extras not included in Node's fs module.
 
-**Note**: From v1.0.0 onwards, fs.utime and fs.utimeSync have been removed.
-Use fs.utimes and fs.utimesSync instead.
+**Note**:
+
+* From `v2.0.0` onwards, module doesn't override `fs` and `constants` Node.js core modules. Instead
+  import functions and constants directly:
+
+  ```js
+  const {flock, constants} = require('fs-ext');
+  // or
+  const fsExt = require('fs-ext');
+  // fsExt.flock
+  // fsExt.constants
+  ```
+
+* From `v1.0.0` onwards, fs.utime and fs.utimeSync have been removed.
+  Use fs.utimes and fs.utimesSync instead.
 
 Installation
 ------------
