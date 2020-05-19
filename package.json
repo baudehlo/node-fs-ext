@@ -8,7 +8,7 @@
     "flock",
     "seek"
   ],
-  "version": "2.0.1",
+  "version": "2.0.2",
   "homepage": "https://github.com/baudehlo/node-fs-ext/",
   "repository": {
     "type": "git",
@@ -16,7 +16,7 @@
   },
   "main": "fs-ext.js",
   "engines": {
-    "node": ">= 8.0.0"
+    "node": ">= 0.10"
   },
   "dependencies": {
     "nan": "^2.14.0"

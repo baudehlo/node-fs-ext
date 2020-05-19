@@ -5,7 +5,7 @@ fs-ext
 [![Coverage Status][cov-img]][cov-url]
 [![Windows Status][ci-win-img]][ci-win-url]
 
-Extras not included in Node's fs module.
+Extras not included in Node's fs module. Supports Node 0.10 upwards.
 
 **Note**:
 
