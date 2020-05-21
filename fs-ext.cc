@@ -242,11 +242,8 @@ static void EIO_Fcntl(uv_work_t *req) {
   store_data_t* data = static_cast<store_data_t *>(req->data);
 
   struct flock lk;
-  lk.l_start = 0;
-  lk.l_len = 0;
-  lk.l_type = 0;
-  lk.l_whence = 0;
-  lk.l_pid = 0;
+
+  memset(&lk, '\0', sizeof (lk));
 
   int result = -1;
   if (data->oper == F_GETLK || data->oper == F_SETLK || data->oper == F_SETLKW) {
