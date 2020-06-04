@@ -242,11 +242,8 @@ static void EIO_Fcntl(uv_work_t *req) {
   store_data_t* data = static_cast<store_data_t *>(req->data);
 
   struct flock lk;
-  lk.l_start = 0;
-  lk.l_len = 0;
-  lk.l_type = 0;
-  lk.l_whence = 0;
-  lk.l_pid = 0;
+
+  memset(&lk, '\0', sizeof (lk));
 
   int result = -1;
   if (data->oper == F_GETLK || data->oper == F_SETLK || data->oper == F_SETLKW) {
@@ -347,8 +344,8 @@ static NAN_METHOD(Flock) {
   store_data_t* flock_data = new store_data_t();
 
   flock_data->fs_op = FS_OP_FLOCK;
-  flock_data->fd = info[0].As<v8::Int32>()->Value();
-  flock_data->oper = info[1].As<v8::Int32>()->Value();
+  flock_data->fd = Nan::To<int32_t>(info[0]).FromJust();
+  flock_data->oper = Nan::To<int32_t>(info[1]).FromJust();
 
   if (info[2]->IsFunction()) {
     flock_data->cb = new Nan::Callback((Local<Function>) info[2].As<Function>());
@@ -398,10 +395,10 @@ static NAN_METHOD(Seek) {
     return THROW_BAD_ARGS;
   }
 
-  int fd = info[0].As<v8::Int32>()->Value();
+  int fd = Nan::To<int32_t>(info[0]).FromJust();
   ASSERT_OFFSET(info[1]);
   off_t offs = GET_OFFSET(info[1]);
-  int whence = info[2].As<v8::Int32>()->Value();
+  int whence = Nan::To<int32_t>(info[2]).FromJust();
 
   if ( ! info[3]->IsFunction()) {
 #ifdef _WIN32
@@ -440,9 +437,9 @@ static NAN_METHOD(Fcntl) {
     return THROW_BAD_ARGS;
   }
 
-  int fd = info[0].As<v8::Int32>()->Value();
-  int cmd = info[1].As<v8::Int32>()->Value();
-  int arg = info[2].As<v8::Int32>()->Value();
+  int fd = Nan::To<int32_t>(info[0]).FromJust();
+  int cmd = Nan::To<int32_t>(info[1]).FromJust();
+  int arg = Nan::To<int32_t>(info[2]).FromJust();
 
   if ( ! info[3]->IsFunction()) {
     int result = fcntl(fd, cmd, arg);
