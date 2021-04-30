@@ -445,7 +445,27 @@ static NAN_METHOD(Fcntl) {
   int arg = info[2].As<v8::Int32>()->Value();
 
   if ( ! info[3]->IsFunction()) {
-    int result = fcntl(fd, cmd, arg);
+    store_data_t* data = new store_data_t();
+
+    struct flock lk;
+    lk.l_start = 0;
+    lk.l_len = 0;
+    lk.l_type = 0;
+    lk.l_whence = 0;
+    lk.l_pid = 0;
+
+    int result = -1;
+    if (cmd == F_GETLK || cmd == F_SETLK || cmd == F_SETLKW) {
+      if (cmd == F_SETLK || cmd == F_SETLKW) {
+        lk.l_whence = SEEK_SET;
+        lk.l_type   = arg;
+      }
+      result = fcntl(fd, cmd, &lk);
+    } else {
+      result = fcntl(fd, cmd, arg);
+    }
+
+    // int result = fcntl(fd, cmd, arg);
     if (result == -1) return Nan::ThrowError(Nan::ErrnoException(errno, "Fcntl", ""));
     info.GetReturnValue().Set(Nan::New<Number>(result));
     return;
