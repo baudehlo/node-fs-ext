@@ -616,5 +616,7 @@ NAN_MODULE_INIT(init)
 }
 
 #if NODE_MODULE_VERSION > 1
-  NODE_MODULE(fs_ext, init)
+  NODE_MODULE_INIT() {
+    init(exports);
+  }
 #endif
