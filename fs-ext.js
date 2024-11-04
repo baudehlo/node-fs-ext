@@ -19,7 +19,7 @@
 
 "use strict";
 
-var binding = require('./build/Release/fs-ext.node');
+var binding = require('./build/Release/fs_ext.node');
 
 // Used by flock
 function stringToFlockFlags(flag) {
