@@ -19,7 +19,7 @@
     "node": ">= 0.10"
   },
   "dependencies": {
-    "nan": "^2.14.0"
+    "nan": "~2.14.0"
   },
   "licenses": [
     {
