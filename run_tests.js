@@ -10,6 +10,8 @@ require('./tests/test-fs-flock');
 
 require('./tests/worker-test.js');
 
+require('./tests/worker-reload-test.js');
+
 // for stress testing only
 if (process.argv[2] == '--stress') {
   require('./tests/test-fs-seek_stress');
