@@ -26,9 +26,8 @@ const write = function (msg) {
   fs.appendFileSync("worker-test.log", `${msg}\n`, { flags: "as" });
 }
 
-fs.rmSync("worker-test.log", { force: true });
-
 if (isMainThread) {
+  fs.rmSync("worker-test.log", { force: true });
   m.lock();
   setTimeout(() => {
     write("releasing main lock");
